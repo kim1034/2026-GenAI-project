@@ -1,0 +1,8 @@
+{
+  "repository": "https://github.com/EleutherAI/lm-evaluation-harness",
+  "repository_commit": "d6de81643928d653435c431bae19945d41d32520",
+  "path": "lm_eval/tasks/gsm8k/gsm8k-cot.yaml",
+  "git_blob_sha": "0841baea504a3d791ef8b1c9ed04e5ea14bbc67f",
+  "derived_file": "gsm8k_8shot.json",
+  "mapping": "fewshot_config.samples in original order; question -> question, target -> answer"
+}

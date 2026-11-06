@@ -1,0 +1,9 @@
+base_config: configs/base.yaml
+split: dev_base
+condition: C
+alpha: 0.1
+temperature: 0.5
+basis: B0
+seed_set: 0
+row_start: 0
+n_rows: 16

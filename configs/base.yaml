@@ -1,0 +1,131 @@
+experiment: gue_vs_gaussian_hallucination
+doc_version: "1.3"
+global_seed: 2026
+
+model:
+  id: Qwen/Qwen2.5-1.5B-Instruct
+  revision: 989aa7980e4cf806f80c7fef2b1adb7bc71aa306
+  dtype: float32
+  attn_implementation: eager
+  expect: {num_hidden_layers: 28, intermediate_size: 8960, hidden_act: silu}
+
+data:
+  source_repository: https://github.com/openai/grade-school-math
+  revision: 3101c7d5072418e28b9008a6636bde82a006892c
+  raw_dir: data/raw
+  splits_dir: data/splits
+  splits: {dev_base: 50, dev_select: 200, dev_anal: 50, test: 1319}
+  near_dup_jaccard_5gram: 0.5
+
+prompt:
+  system_file: prompts/system.txt
+  fewshot_file: prompts/gsm8k_8shot.json
+  n_shot: 8
+  add_generation_prompt: true
+
+decode:
+  max_new_tokens: 512
+  eos_token_ids: [151645, 151643]
+  label_mode: greedy
+  sample_temperature: 0.5
+  top_p: 1.0
+  top_k: null
+  repetition_penalty: 1.0
+  k_generate_test: 32
+  k_generate_dev: 16
+  k_generate_rehearsal: 32
+  k_main: 8
+  k_replication: 10
+  batch: one_problem_per_batch
+  prefill_logits: last_position_only
+  drop_finished_rows: false
+  temperature_grid_Ap: [0.6, 0.8, 1.0, 1.2, 1.4, 1.7]
+
+noise:
+  site: act_fn_output
+  layers_1idx: [20, 21, 22, 23, 24, 25, 26, 27, 28]
+  layers_0idx: [19, 20, 21, 22, 23, 24, 25, 26, 27]
+  timing: per_response
+  shared_across_layers: true
+  d: 8960
+  rho_file: calib/rho.json
+  bank_dir: bank
+  control_pool_size: 256
+  bank_dtype: float32
+  basis_main: B0
+  basis_rotation: B1
+  recenter_after_rotation: true
+  grid_middle: ceil_half
+  common_alpha: {select_on: C, shared_by: [C, D, E, T5, O, L], check_on: [D, T5], exception_gap_steps: 2, exception_gain: 0.01, exception_run_order: [D, T5]}
+  conditions:
+    A: {type: none, temperature: 0.5, priority: P1}
+    Ap: {type: none, temperature: null, priority: P1, skip_if: "T_best == 0.5"}
+    B: {type: uniform_positive, alpha_kind: absolute, grid: [0.01, 0.03, 0.05, 0.07, 0.09, 0.11], rng_key: 7, priority: P1}
+    C: {type: gaussian, alpha_kind: relative_rho, alpha: common, grid: null, rng_key: 6, priority: P1}
+    D: {type: gue, beta: 2, alpha_kind: relative_rho, alpha: common, grid: common, rng_key: 3, priority: P1}
+    E: {type: gue_marginal_iid, alpha_kind: relative_rho, alpha: common, grid: null, rng_key: 5, priority: P1}
+    T5: {type: student_t, df: 5, scale: 0.7745966692414834, alpha_kind: relative_rho, alpha: common, rng_key: 14, priority: P1}
+    S: {type: sparse_gaussian, p: null, alpha_kind: relative_rho, alpha: own, grid: null, rng_key: 15, priority: P1}
+    S_H: {base: S, basis: B1, alpha: same_as_S, priority: P2, order: 1}
+    O: {type: goe, beta: 1, alpha_kind: relative_rho, alpha: common, rng_key: 11, priority: P2, order: 2}
+    L: {type: laplace, scale: 0.7071067811865476, alpha_kind: relative_rho, alpha: common, rng_key: 13, priority: P2, order: 3}
+    T5_H: {base: T5, basis: B1, alpha: common, priority: P2, order: 4}
+    Bc: {type: uniform_centered, alpha_kind: absolute, alpha: same_as_B, rng_key: 7, priority: P2, order: 5}
+  pilot_grid_C: [0.0125, 0.025, 0.05, 0.1, 0.2, 0.4, 0.8, 1.6]
+  pilot_grid_S: [0.00625, 0.0125, 0.025, 0.05, 0.1, 0.2]
+  grid_edge_check: {conds: [C, D, T5, S, B, Ap], max_extra_runs_per_cond: 1, min_gain: 0.005, step: {relative: log_ratio, B: [0.005, 0.13], Ap: [0.3, 1.9]}}
+  sparse_rule: {from: deff_g_m_dev_median, candidates: [0.001, 0.002, 0.005, 0.01, 0.02], fallback: 0.005}
+  heterogeneity: {measure: iqr_log10_deff_g_m_dev, threshold: 0.3}
+
+label: {rule: greedy_wrong_or_invalid}
+score: {type: answer_entropy, log: natural, invalid: singleton}
+selection: {split: dev_select, max_acc_drop: 0.05, max_invalid_increase: 0.05, tie_tolerance: 0.005, tie_break: smallest_alpha}
+aux: {arith_check: false}
+diag:
+  gradient_primary: margin_min_digit_token
+  gradient_secondary: seq_logprob
+  center_gradient: true
+  fd_check: {n_problems: 3, h_over_sqrt_d: 1.0e-3, max_rel_err: 0.05}
+  linearity: {n_problems: 20, n_draws: 16, noises: [gaussian_at_common_alpha, sparse_at_alpha_S], alpha_fracs: [0.25, 0.5, 1.0], r2_threshold: 0.5}
+
+stats:
+  bootstrap_B: 10000
+  ci: percentile_95
+  practical_delta: 0.02
+  secondary_correction: holm
+  primary: {a: D, b: C, split: test, basis: B0, seed_set: 0}
+  estimand: mean_auroc_over_subsets
+  sides: two_sided
+  holm_family: [D-E, S-C, C-Ap]
+  verdict_report: [D-C, D-E, E-C, T5-C, O-E, L-C, T5-T5_H, S-S_H]
+  descriptive_only: [T5_H-C, S_H-C]
+  dev_matched_fa: {reference: C, curves: [C, D, T5, temperature], isotonic: true}
+  tail_trend_weights: {E: 0.5, C: 0.5, T5: -1.0}
+  boost_rule: {se_threshold: 0.0072, conds: [C, D, E], extra_rows: 32}
+  kl: {targets: [C, D, E, T5, S], curve_targets: [C, D, T5, S], flag_ratio: 2.0, action: flag_only}
+  prediction_items: [PR1, PR2a, PR2b, PR2c, PR3_T5, PR3_S, PR4, PR5, PR6]
+  outcomes: [확인, 부분 확인, 반증, 유보, 수행 안 함, 수행 불가]
+  flip_rows: first_32
+  freeze_test_analysis_until_required_runs_done: true
+  analysis_list: configs/analysis.yaml
+
+budget:
+  gpu: A5000
+  hours_total: 120
+  hours_planned: 97.9
+  p2_start_rule: "used + next_estimate <= 110"
+  t_run_s: {rows32: null, rows16: null}
+  assumed_t_run_s: {rows32: 12.0, rows16: 8.0}
+  problem_runs:
+    pilot_dev16: 750
+    select_dev16: 7600
+    grid_edge_dev16_max: 1200
+    rehearsal_dev32: 400
+    required_test32: 10552
+    boost_test32: 3957
+    optional_test32: 6595
+  other_gpu_hours: 5.0
+  speedup_O1: null
+
+hardware:
+  gpu_name: null

@@ -1,0 +1,17 @@
+{
+  "dataset": "GSM8K",
+  "repository": "https://github.com/openai/grade-school-math",
+  "repository_commit": "3101c7d5072418e28b9008a6636bde82a006892c",
+  "source_role": "canonical_experiment_data",
+  "files": {
+    "gsm8k_train.jsonl": {
+      "path": "grade_school_math/data/train.jsonl",
+      "git_blob_sha": "7d97154b91aef28d01c3301741c81ce90039a4b1"
+    },
+    "gsm8k_test.jsonl": {
+      "path": "grade_school_math/data/test.jsonl",
+      "git_blob_sha": "e4c2ff4942b9a78bd74f04141224c11e28d12dc9"
+    }
+  },
+  "note": "The local train/test bytes match the OpenAI GitHub source blobs at the recorded commit. Hugging Face's converted Parquet copy is not used or claimed to be bytewise equivalent."
+}

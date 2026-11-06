@@ -1,0 +1,9 @@
+{
+  "model_id": "Qwen/Qwen2.5-1.5B-Instruct",
+  "revision": "989aa7980e4cf806f80c7fef2b1adb7bc71aa306",
+  "revision_url": "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct/commit/989aa7980e4cf806f80c7fef2b1adb7bc71aa306",
+  "verified_at": "2026-11-02",
+  "verification": "The full commit URL resolves in the official model repository and matches the latest main commit shown in its history at verification time.",
+  "weights_downloaded": false,
+  "weights_checksum_verified": false
+}
