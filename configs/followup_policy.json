@@ -1,0 +1,5 @@
+{
+  "maximum_separate_designs": 1,
+  "designs_registered": [],
+  "rule": "Complete the existing experiment plan first. If needed, register at most one separate follow-up design with its purpose, hypotheses, data split, run list, budget and stopping rule before running it. Do not create a second design after observing the follow-up results."
+}
