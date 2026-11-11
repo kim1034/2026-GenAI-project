@@ -147,23 +147,38 @@ def trend_contrast(labels: Sequence[int], scores_by_condition: Mapping[str, np.n
     return float(sum(weight * mean_auroc(labels, scores_by_condition[name]) for name, weight in weights.items()))
 
 
-def project_test_se(bootstrap_subset_deltas: np.ndarray, *, n_dev: int, n_test: int, target_subsets: int) -> float:
+def projection_details(bootstrap_subset_deltas: np.ndarray, *, n_dev: int, n_test: int, target_subsets: int) -> dict:
     """Project bootstrap subset covariance from development to test sample size."""
     draws = np.asarray(bootstrap_subset_deltas, dtype=np.float64)
     if draws.ndim != 2 or draws.shape[0] < 2 or draws.shape[1] < 2:
         raise ValueError("at least two draws and two response subsets are required")
+    if not np.all(np.isfinite(draws)):
+        raise ValueError("bootstrap subset differences must be finite")
+    if any(isinstance(value, bool) or not isinstance(value, (int, np.integer)) for value in (n_dev, n_test, target_subsets)):
+        raise ValueError("sample sizes and subset count must be integers")
     if n_dev < 2 or n_test < 2 or target_subsets < 1:
         raise ValueError("positive sample sizes and subset count are required")
     covariance = np.cov(draws, rowvar=False, ddof=1)
     count = covariance.shape[0]
     within = float(np.trace(covariance) / count)
     between = float((covariance.sum() - np.trace(covariance)) / (count * (count - 1)))
-    variance = max(0.0, between + (within - between) / target_subsets)
-    return float(np.sqrt(variance * n_dev / n_test))
+    variance = between + (within - between) / target_subsets
+    return {"V1": within, "Cv": between, "target_subsets": target_subsets,
+            "raw_variance": variance, "scaled_variance": variance * n_dev / n_test,
+            "negative_covariance_warning": between < 0,
+            "status": "invalid_projection" if variance < 0 else "degenerate_zero_variance" if variance == 0 else "ok",
+            "se": None if variance < 0 else float(np.sqrt(variance * n_dev / n_test))}
+
+
+def project_test_se(bootstrap_subset_deltas: np.ndarray, *, n_dev: int, n_test: int, target_subsets: int) -> float:
+    result = projection_details(bootstrap_subset_deltas, n_dev=n_dev, n_test=n_test, target_subsets=target_subsets)
+    if result["status"] == "invalid_projection":
+        raise ValueError("negative projected variance; inspect projection_details instead of clipping to zero")
+    return result["se"]
 
 
 def equivalence_probability(se: float, *, practical_delta: float) -> float:
-    if se <= 0 or practical_delta <= 0:
+    if not np.isfinite(se) or not np.isfinite(practical_delta) or se <= 0 or practical_delta <= 0:
         raise ValueError("standard error and practical delta must be positive")
     boundary = min(1.96, practical_delta / se - 1.96)
     return float(max(0.0, 2 * norm.cdf(boundary) - 1))
