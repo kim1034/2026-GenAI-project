@@ -1,5 +1,7 @@
 import numpy as np
 import pytest
+import json
+from types import SimpleNamespace
 
 from src.noise import beta_hermite_spectrum, coefficients, direction, haar_orthogonal, uniform_base
 from src.bank import build_bank, load_bank
@@ -24,6 +26,13 @@ def test_noise_keys_and_direction_are_deterministic():
     assert np.linalg.norm(vector) == pytest.approx(1, abs=1e-6)
     assert abs(vector.mean()) < 1e-7
     assert np.array_equal(uniform_base(**args), uniform_base(**args))
+
+
+def test_uniform_rounding_never_creates_excluded_upper_endpoint(monkeypatch):
+    monkeypatch.setattr("src.noise.rng_for", lambda *args, **kwargs: SimpleNamespace(random=lambda d: np.full(d, 1 - 2**-53)))
+    values = uniform_base(d=4, seed_set=0, split_key=0, original_index=0, response_index=0, global_seed=2026)
+    assert values.dtype == np.float32
+    assert np.all(values < 1)
 
 
 def test_gue_goe_and_rotation_small_dimension():
@@ -53,3 +62,31 @@ def test_bank_is_saved_and_checked_before_use(tmp_path):
     assert np.allclose(centered, base - 0.5, atol=1e-7)
     with pytest.raises(ValueError):
         load_bank(base_path, base_manifest, ids[::-1], row_start=0, n_rows=2)
+
+
+def test_parallel_spectra_match_serial_and_seed_changes_cannot_reuse_bank(tmp_path):
+    config = {"global_seed": 2026, "noise": {"d": 32, "control_pool_size": 2,
+              "conditions": {"S": {"p": 0.5}}}}
+    ids = ["train-00001", "train-00042"]
+    args = dict(condition="D", split="dev", seed_set=0, row_start=0, n_rows=4)
+    serial, _ = build_bank(tmp_path / "serial", ids, config, **args)
+    parallel, _ = build_bank(tmp_path / "parallel", ids, config, workers=2, **args)
+    assert serial.read_bytes() == parallel.read_bytes()
+    config["global_seed"] += 1
+    with pytest.raises(RuntimeError, match="metadata differs"):
+        build_bank(tmp_path / "serial", ids, config, **args)
+
+
+def test_sparse_support_evidence_and_sparsity_identity(tmp_path):
+    config = {"global_seed": 2026, "noise": {"d": 32, "control_pool_size": 2,
+              "conditions": {"S": {"p": 0.5}}}}
+    ids = ["train-00001"]
+    args = dict(condition="S", split="dev", seed_set=0, row_start=0, n_rows=2)
+    path, metadata = build_bank(tmp_path, ids, config, **args)
+    manifest = json.loads(metadata.read_text())
+    support = np.load(tmp_path / manifest["support_count_file"])
+    assert support.tolist() == [[16, 16]]
+    load_bank(path, metadata, ids, row_start=0, n_rows=2)
+    config["noise"]["conditions"]["S"]["p"] = 0.25
+    with pytest.raises(RuntimeError, match="metadata differs"):
+        build_bank(tmp_path, ids, config, **args)

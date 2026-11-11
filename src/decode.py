@@ -50,7 +50,7 @@ def decode(
                 finish_reasons[int(row)] = "eos"
             finished |= just_finished
             generated.append(next_ids.copy())
-            if finished.all():
+            if finished.all() or step + 1 == max_new_tokens:
                 break
             output = model.model(
                 input_ids=torch.as_tensor(next_ids[:, None], dtype=torch.long, device=device),

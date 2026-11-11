@@ -1,0 +1,9 @@
+{
+  "name": "gpu_validation_20261112",
+  "after_stage": "diagnostics_20261112",
+  "wait_timeout_seconds": 21600,
+  "require_initial_probe": true,
+  "commands": [
+    ["-m", "scripts.validate_gpu"]
+  ]
+}

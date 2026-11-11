@@ -66,8 +66,10 @@ def coefficients(
 
 def uniform_base(*, d: int, seed_set: int, split_key: int, original_index: int,
                  response_index: int, global_seed: int) -> np.ndarray:
-    return rng_for(7, seed_set, split_key, original_index, response_index,
-                   global_seed=global_seed).random(d).astype(np.float32)
+    values = rng_for(7, seed_set, split_key, original_index, response_index,
+                     global_seed=global_seed).random(d).astype(np.float32)
+    # Float64 values just below 1 can round to 1 in float32; preserve the [0, 1) support.
+    return np.minimum(values, np.nextafter(np.float32(1), np.float32(0)))
 
 
 def direction(coefficients_array: np.ndarray, rotation: np.ndarray | None = None) -> np.ndarray:

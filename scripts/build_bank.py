@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("run_config", type=Path)
+    parser.add_argument("--workers", type=int, default=1, help="Independent GUE/GOE coefficient workers")
     args = parser.parse_args()
     run = yaml.safe_load(args.run_config.read_text(encoding="utf-8"))
     config = load_config(ROOT / run.get("base_config", "configs/base.yaml"))
@@ -23,6 +24,7 @@ def main() -> None:
     path, manifest = build_bank(
         ROOT, ids, config, condition=run["condition"], split=split,
         seed_set=run["seed_set"], row_start=run.get("row_start", 0), n_rows=run["n_rows"],
+        workers=args.workers,
     )
     print(f"bank: {path.relative_to(ROOT)}")
     print(f"manifest: {manifest.relative_to(ROOT)}")
