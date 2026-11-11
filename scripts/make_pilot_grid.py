@@ -10,6 +10,9 @@ output paths are relative to root. Omit S while its p or runs are unavailable.
 Including S requires ``sparse_decision: {path: ..., sha256: ...}`` identifying
 a completed diagnostic JSON with ``status: complete`` and its fixed ``p``.
 All named inputs must validate before any new decision file is written.
+Execution-time runtime metadata (and C/S rho hashes) are required; older runs
+without this evidence are rejected. Source fingerprint or GPU UUID differences
+block automatic equivalence and require review, even on otherwise similar GPUs.
 """
 
 import argparse
@@ -95,6 +98,26 @@ def _runtime(manifest, base):
     return reference
 
 
+def _bank_evidence(root, manifest, base, condition, ids):
+    if condition == "A":
+        if manifest.get("bank_file") is not None or manifest.get("bank_sha256") is not None:
+            raise ValueError("A must not use a noise bank")
+        return {}
+    bank_path = _path(root, manifest["bank_file"])
+    bank_manifest_path = bank_path.with_suffix(".json")
+    bank = json.loads(bank_manifest_path.read_text(encoding="utf-8"))
+    expected = {"condition": condition, "split": "dev_base", "basis": "B0", "seed_set": 0,
+                "row_start": 0, "n_rows": 16,
+                "sparse_p": base["noise"]["conditions"]["S"]["p"] if condition == "S" else None,
+                "dimension": base["noise"]["d"], "global_seed": base["global_seed"],
+                "ids": ids, "dtype": "float32"}
+    if (any(bank.get(key) != value for key, value in expected.items())
+            or bank.get("file_sha256") != manifest.get("bank_sha256")
+            or sha256(bank_path) != manifest.get("bank_sha256")):
+        raise ValueError(f"{condition} bank identity/hash/p differs from run and base snapshot")
+    return {"bank_manifest_sha256": sha256(bank_manifest_path), "bank_sha256": manifest["bank_sha256"]}
+
+
 def _load_run(run_path, condition, root, config_root, source_root, baseline=None):
     run = yaml.safe_load(run_path.read_text(encoding="utf-8"))
     if not isinstance(run, dict):
@@ -110,6 +133,8 @@ def _load_run(run_path, condition, root, config_root, source_root, baseline=None
     base_path = _path(config_root, run.get("base_config", "configs/base.yaml"))
     base = load_config(base_path)
     _validate_run(run, base)
+    if base["decode"]["k_main"] != 8:
+        raise ValueError("Pilot requires k_main=8")
     if condition != "A" and not math.isfinite(float(run["alpha"])):
         raise ValueError("Pilot alpha must be finite")
     if condition == "S":
@@ -134,7 +159,25 @@ def _load_run(run_path, condition, root, config_root, source_root, baseline=None
                 "system_sha256": sha256(_path(source_root, base["prompt"]["system_file"]))}
     if any(manifest.get(key) != value for key, value in expected.items()):
         raise ValueError(f"Manifest does not match actual YAML/config/prompt sources: {name}")
+    optional = {"run_parameters": run, "base_config_snapshot": base, "alpha": run.get("alpha"),
+                "temperature": run["temperature"], "id_version": run.get("id_version", 1)}
+    if any(key in manifest and manifest[key] != value for key, value in optional.items()):
+        raise ValueError("Manifest parameter snapshots disagree with actual YAML")
+    if condition != "A" and manifest.get("rho_sha256") != sha256(_path(source_root, base["noise"]["rho_file"])):
+        raise ValueError("Insufficient or mismatching execution-time rho hash")
+    if condition != "A" and "rho_snapshot" in manifest:
+        rho = json.loads(_path(source_root, base["noise"]["rho_file"]).read_text(encoding="utf-8"))
+        if manifest["rho_snapshot"] != rho:
+            raise ValueError("Execution-time rho snapshot differs from source")
     grouped = load_completed(root, manifest, ids)
+    for items in grouped.values():
+        for item in items:
+            fields = {"cond": condition, "alpha": run.get("alpha"), "temperature": run["temperature"],
+                      "basis": run.get("basis") or "NA", "seed_set": 0, "n_rows": 16,
+                      "subset": item["k"] // 8}
+            if any(key not in item or item[key] != value for key, value in fields.items()):
+                raise ValueError("Raw response parameters disagree with run YAML")
+    bank_evidence = _bank_evidence(root, manifest, base, condition, ids)
     signature = _signature(base, analysis, source_root, sha256(ids_path))
     signature["runtime"] = _runtime(manifest, base)
     if baseline is not None:
@@ -165,6 +208,7 @@ def _load_run(run_path, condition, root, config_root, source_root, baseline=None
                 "execution_signature": signature,
                 "execution_invocations": manifest["execution_invocations"],
                 "sparse_p": base["noise"]["conditions"]["S"].get("p"),
+                "rho_sha256": manifest.get("rho_sha256"), **bank_evidence,
                 "output_sha256": manifest["output_sha256"], "alpha": run.get("alpha"),
                 "mean_unique8_first_subset": sum(unique) / len(unique), "invalid": invalid / (16 * len(ids))}
     return evidence, grouped, base
@@ -214,19 +258,6 @@ def make_pilot_grids(plan_path):
             if condition == "S":
                 if item["sparse_p"] != sparse["p"]:
                     raise ValueError("S p differs from diagnostic decision")
-                manifest = json.loads((root / "outputs/manifests" / f'{item["run_id"]}.json').read_text(encoding="utf-8"))
-                bank_path = _path(root, manifest["bank_file"])
-                bank_manifest_path = bank_path.with_suffix(".json")
-                bank = json.loads(bank_manifest_path.read_text(encoding="utf-8"))
-                expected_bank = {"condition": "S", "split": "dev_base", "basis": "B0", "seed_set": 0,
-                                 "row_start": 0, "n_rows": 16, "sparse_p": sparse["p"],
-                                 "dimension": base["noise"]["d"], "global_seed": base["global_seed"],
-                                 "ids": list(reference), "dtype": "float32"}
-                if (any(bank.get(k) != v for k, v in expected_bank.items())
-                        or bank.get("file_sha256") != manifest.get("bank_sha256")
-                        or sha256(bank_path) != manifest.get("bank_sha256")):
-                    raise ValueError("S bank identity/hash/p differs from diagnostic decision or run")
-                item["bank_manifest_sha256"] = sha256(bank_manifest_path)
                 item["sparse_decision_sha256"] = sparse_spec["sha256"]
             rows.append(item)
         rows.sort(key=lambda row: row["alpha"])

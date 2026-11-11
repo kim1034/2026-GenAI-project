@@ -45,6 +45,9 @@ def evidence(tmp_path):
         yaml_path = snapshot / f"{name}.yaml"
         yaml_path.write_text(yaml.safe_dump(config), encoding="utf-8")
         samples = [{"id": pid, "run_id": name, "k": k, "prompt_sha256": f"prompt-{pid}",
+                    "cond": condition, "alpha": alpha, "temperature": config["temperature"],
+                    "basis": config["basis"] or "NA", "seed_set": config["seed_set"],
+                    "n_rows": 16, "subset": k // 8,
                     "answer": (answers or ["1"] * 16)[k]} for pid in ids for k in range(16)]
         output = tmp_path / "outputs/samples" / f"{name}.jsonl"
         output.parent.mkdir(parents=True, exist_ok=True)
@@ -57,6 +60,19 @@ def evidence(tmp_path):
                     "model_revision": base["model"]["revision"],
                     "fewshot_sha256": sha256(snapshot / base["prompt"]["fewshot_file"]),
                     "system_sha256": sha256(snapshot / base["prompt"]["system_file"])}
+        manifest.update(run_parameters=config, base_config_snapshot=selected_base, alpha=alpha,
+                        temperature=config["temperature"], id_version=config["id_version"],
+                        rho_sha256=None if condition == "A" else sha256(snapshot / base["noise"]["rho_file"]))
+        if condition != "A":
+            bank_path = tmp_path / f"bank_{condition}.npy"
+            bank_path.write_bytes(b"synthetic preserved bank bytes")
+            bank = {"condition": condition, "split": "dev_base", "basis": "B0", "seed_set": 0,
+                    "row_start": 0, "n_rows": 16, "sparse_p": selected_base["noise"]["conditions"]["S"]["p"]
+                    if condition == "S" else None,
+                    "dimension": base["noise"]["d"], "global_seed": base["global_seed"],
+                    "ids": ids, "dtype": "float32", "file_sha256": sha256(bank_path)}
+            write_json(bank_path.with_suffix(".json"), bank)
+            manifest.update(bank_file=bank_path.name, bank_sha256=sha256(bank_path))
         environment = {"python": "3.12", "torch": "2.6", "transformers": "4.50", "cuda": "12.4",
                        "gpu_name": "RTX A5000", "gpu_total_memory": 24000, "hostname": "host",
                        "deterministic_algorithms": True, "tf32_matmul": False, "tf32_cudnn": False,
@@ -240,5 +256,27 @@ def test_runtime_evidence_is_required_and_differences_are_not_assumed_equivalent
         manifest["execution_invocations"][0]["environment"][failure] = value
     write_json(manifest_path, manifest)
     with pytest.raises(ValueError, match="Runtime|runtime|signature|Insufficient"):
+        make_pilot_grids(plan_path)
+    assert not (root / "grid_C.json").exists()
+
+
+@pytest.mark.parametrize("failure", ["raw_alpha", "snapshot", "bank", "rho"])
+def test_self_consistent_output_hash_cannot_hide_parameter_or_provenance_drift(evidence, failure):
+    root, _, _, _, plan_path, runs, _ = evidence
+    _, manifest_path, output = runs[-1]
+    manifest = json.loads(manifest_path.read_text())
+    if failure == "raw_alpha":
+        rows = [json.loads(line) for line in output.read_text().splitlines()]
+        rows[0]["alpha"] = 999
+        output.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+        manifest["output_sha256"] = sha256(output)
+    elif failure == "snapshot":
+        manifest["run_parameters"]["alpha"] = 999
+    elif failure == "bank":
+        (root / manifest["bank_file"]).write_bytes(b"wrong bank")
+    else:
+        del manifest["rho_sha256"]
+    write_json(manifest_path, manifest)
+    with pytest.raises(ValueError, match="parameters|snapshots|bank|rho"):
         make_pilot_grids(plan_path)
     assert not (root / "grid_C.json").exists()
