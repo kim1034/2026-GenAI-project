@@ -23,10 +23,15 @@ def sparse_decision(deff, *, dimension=8960):
     median = float(np.median(values))
     target = float(np.clip(1 / median, .001, .02))
     candidates = np.array([.001, .002, .005, .01, .02])
-    selected = float(candidates[np.argmin(np.abs(np.log(candidates) - np.log(target)))])
+    distances = np.abs(np.log(candidates) - np.log(target))
+    ties = np.flatnonzero(distances <= distances.min() + 1e-14)
+    selected = float(candidates[ties[0]])
     q1, q3 = np.quantile(np.log10(values), [.25, .75], method="linear")
     heterogeneity = float(q3 - q1)
     return {"status": "complete", "p": selected, "median_deff_g_m": median, "inverse_median_clipped": target,
             "H": heterogeneity, "PR2b": "S<C" if heterogeneity >= .3 else "practical_equivalence",
             "support_count": round(selected * dimension), "problems": len(values),
+            "log10_deff_q1": float(q1), "log10_deff_q3": float(q3),
+            "candidate_log_distances": {str(p): float(distance) for p, distance in zip(candidates, distances)},
+            "tie_policy": "smallest_p_within_1e-14_absolute_log_distance_of_minimum", "tie_detected": len(ties) > 1,
             "quantile_method": "linear", "diagnostic_fallback": False}
