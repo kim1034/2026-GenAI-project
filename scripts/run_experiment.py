@@ -6,6 +6,8 @@ import json
 import os
 import subprocess
 import time
+import platform
+import socket
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -41,6 +43,28 @@ def json_write(path: Path, value: dict | list) -> None:
 def git_head() -> str | None:
     result = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True)
     return result.stdout.strip() if result.returncode == 0 else None
+
+
+def execution_environment(model, tokenizer) -> dict:
+    import torch
+    import transformers
+    properties = torch.cuda.get_device_properties(torch.cuda.current_device())
+    sources = [ROOT / "scripts/run_experiment.py", *(ROOT / "src").glob("*.py")]
+    return {
+        "python": platform.python_version(), "hostname": socket.gethostname(),
+        "torch": torch.__version__, "transformers": transformers.__version__, "cuda": torch.version.cuda,
+        "gpu_name": properties.name, "gpu_uuid": str(getattr(properties, "uuid", "unavailable")),
+        "gpu_total_memory": properties.total_memory,
+        "deterministic_algorithms": torch.are_deterministic_algorithms_enabled(),
+        "tf32_matmul": torch.backends.cuda.matmul.allow_tf32, "tf32_cudnn": torch.backends.cudnn.allow_tf32,
+        "cpu_threads": torch.get_num_threads(), "cpu_interop_threads": torch.get_num_interop_threads(),
+        "cublas_workspace_config": os.environ.get("CUBLAS_WORKSPACE_CONFIG"),
+        "model_dtype": str(next(model.parameters()).dtype),
+        "model_revision_loaded": getattr(model.config, "_commit_hash", None),
+        "tokenizer_revision_loaded": tokenizer.init_kwargs.get("_commit_hash"),
+        "sampling": "cpu_float64_inverse_cdf", "prefill_optimization_O1": False,
+        "source_sha256": {str(path.relative_to(ROOT)).replace("\\", "/"): sha256(path) for path in sorted(sources)},
+    }
 
 
 def run_id(run: dict) -> str:
@@ -181,6 +205,13 @@ def main() -> None:
     from src.model import load_model
 
     model, tokenizer = load_model(base)
+    observed = execution_environment(model, tokenizer)
+    manifest.setdefault("execution_invocations", []).append({
+        "observed_at_utc": datetime.now(timezone.utc).isoformat(),
+        "scope": "this_invocation_only", "environment": observed,
+        "existing_problem_files": len(list(output_dir.glob("*.json"))),
+    })
+    json_write(manifest_path, manifest)
     scales = _layer_scales(base, run["condition"], run.get("alpha"))
     hook = MLPNoise(model, base["noise"]["layers_0idx"], scales)
     started = time.monotonic()
