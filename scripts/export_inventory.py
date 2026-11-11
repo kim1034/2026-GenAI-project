@@ -7,8 +7,8 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-FOLDERS = ["outputs/samples", "outputs/manifests", "outputs/diag", "outputs/diagnostics", "outputs/calib",
-           "outputs/logs", "calib", "bank", "reports", "configs", "src", "scripts", "tests", "prompts", "data/splits"]
+FOLDERS = ["outputs/samples", "outputs/manifests", "outputs/diag", "outputs/diagnostics", "outputs/calib", "outputs/reproducibility",
+           "outputs/logs", "calib", "bank", "reports", "configs", "src", "scripts", "tests", "prompts", "data/splits", "models"]
 
 
 def main():
