@@ -26,6 +26,8 @@ def test_summary_uses_mean_of_subset_auroc_and_checks_prompt():
     grouped = {"a": items(["1"] * 16), "b": items(["2", "3"] * 4 + ["2"] * 8)}
     summary, y, scores = summarize_run(grouped, greedy, {"a": "1", "b": "1"})
     assert summary["auroc"] == pytest.approx(0.75)
+    assert summary["mean_unique8"] == pytest.approx(1.25)
+    assert summary["mean_unique8_first_subset"] == pytest.approx(1.5)
     assert list(y) == [0, 1]
     grouped["b"][0]["prompt_sha256"] = "different"
     with pytest.raises(ValueError, match="prompt"):

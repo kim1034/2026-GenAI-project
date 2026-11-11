@@ -39,7 +39,7 @@ def load_completed(root: Path, manifest: dict, expected_ids: list[str]) -> dict[
 
 def summarize_run(grouped, greedy, gold_by_id):
     ids = list(grouped)
-    scores, labels, flips, majority_correct = [], [], [], []
+    scores, labels, flips, majority_correct, unique_counts = [], [], [], [], []
     invalid = truncated = count = 0
     for problem_id in ids:
         items = grouped[problem_id]
@@ -50,6 +50,10 @@ def summarize_run(grouped, greedy, gold_by_id):
         if len(answers) % 8:
             raise ValueError("Entropy estimation requires complete groups of eight")
         scores.append([answer_entropy(answers[i:i + 8]) for i in range(0, len(answers), 8)])
+        for start in range(0, len(answers), 8):
+            group = answers[start:start + 8]
+            unique_counts.append(len({("invalid", j) if answer == INVALID else ("valid", answer)
+                                      for j, answer in enumerate(group)}))
         majority_correct.extend(is_correct(majority(answers[i:i + 8]), gold_by_id[problem_id])
                                 for i in range(0, len(answers), 8))
         labels.append(int(not is_correct(baseline["answer"], gold_by_id[problem_id])))
@@ -59,6 +63,8 @@ def summarize_run(grouped, greedy, gold_by_id):
         count += len(items)
     score_array = np.asarray(scores)
     summary = {"problems": len(ids), "responses": count, "maj_acc": float(np.mean(majority_correct)),
+               "mean_unique8": float(np.mean(unique_counts)),
+               "mean_unique8_first_subset": float(np.asarray(unique_counts).reshape(len(ids), -1)[:, 0].mean()),
                "invalid": invalid / count, "truncated": truncated / count,
                "positive_labels": sum(labels), "auroc": None, "label_classes_complete": len(set(labels)) == 2}
     if len(set(labels)) == 2:
