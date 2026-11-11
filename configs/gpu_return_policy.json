@@ -1,0 +1,5 @@
+{
+  "responsible_party": "user",
+  "automatic_return_authorized": false,
+  "instruction": "Continue experiments, analysis and verified final backup. Notify the user when the GPU is safe to return. The user will return the GPU manually."
+}
