@@ -1,6 +1,7 @@
 """Translate the fixed development pilot rule into an auditable selection grid."""
 
 import math
+from decimal import Decimal
 import numpy as np
 
 
@@ -18,7 +19,8 @@ def pilot_grid(rows, baseline_unique8_first_subset, expected_alphas):
         unique, invalid = row["mean_unique8_first_subset"], row["invalid"]
         if not math.isfinite(unique) or not 1 <= unique <= 8 or not math.isfinite(invalid) or not 0 <= invalid <= 1:
             raise ValueError("Invalid pilot summary")
-    lower = [float(row["alpha"]) for row in ordered if row["mean_unique8_first_subset"] >= baseline_unique8_first_subset + 0.2]
+    threshold = Decimal(str(baseline_unique8_first_subset)) + Decimal("0.2")
+    lower = [float(row["alpha"]) for row in ordered if Decimal(str(row["mean_unique8_first_subset"])) >= threshold]
     upper = [float(row["alpha"]) for row in ordered if row["invalid"] <= 0.2]
     lo, hi = min(lower) if lower else None, max(upper) if upper else None
     result = {"alpha_lo": lo, "alpha_hi": hi, "grid": [], "status": "blocked_no_hi", "launch_allowed": False}

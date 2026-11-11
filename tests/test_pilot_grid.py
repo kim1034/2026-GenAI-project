@@ -28,3 +28,9 @@ def test_fallback_and_undefined_cases_do_not_invent_new_magnitudes():
     assert pilot_grid(rows([1] * 8, [.3] * 8), 1, expected)["status"] == "blocked_no_hi"
     with pytest.raises(ValueError, match="entire expected"):
         pilot_grid(rows([1] * 8, [0] * 8)[:-1], 1, expected)
+
+
+def test_exact_point_two_increase_is_inclusive():
+    expected = [.0125, .025, .05, .1, .2, .4, .8, 1.6]
+    result = pilot_grid(rows([2.1, 2.1, 2.3, 3, 3, 3, 3, 3], [0] * 8), 2.1, expected)
+    assert result["alpha_lo"] == .05
