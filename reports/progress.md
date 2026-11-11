@@ -4,6 +4,7 @@
 
 | 시각 (KST) | 단계 | 진행 내용 | 결과·다음 확인 |
 | --- | --- | --- | --- |
+| 2026-11-12 00:42 | A5000 실험 재개 | SSH 및 CUDA 확인, 원격 테스트 29개 통과. 개발 첫 문제의 1/16/32행 반복 토큰 출력이 모두 동일. 개발 greedy 300문제와 rho 교정 큐 시작. | 상세 실측과 남은 게이트는 `reports/gpu_session_20261112.md`. 아직 전체 G1·LOCK·test 실행 전. |
 | 2026-11-02 20:33 | 데이터 출처 결정 | 사용자 지시에 따라 OpenAI 공식 GitHub commit `3101c7d5072418e28b9008a6636bde82a006892c`의 JSONL을 기준 데이터로 채택했다. 인계 문서 v1.3·실행계획·설정·출처 기록을 갱신하고 불필요한 Hugging Face 대조 스크립트를 제거했다. | 로컬 train/test Git blob과 SHA-256 검증을 시험 잠금에 추가. Hugging Face 변환본과의 전체 행 동일성은 주장하지 않음. Git 저장소 커밋과 LOCK은 후속 단계. |
 | 2026-11-02 18:23 | GPU 전 데이터·revision 점검 | 로컬 GSM8K 8,792행의 필드·정답 파싱·SHA-256과 OpenAI 원본 Git blob을 재확인했다. 공식 Hugging Face의 데이터 SHA와 Qwen 모델의 전체 commit을 확인하고 모델 revision을 고정했다. | 원본 blob 일치, 검산 27개 통과. Hugging Face Parquet와 전체 행 대조는 이 PC의 네트워크 차단으로 미완료. `scripts/compare_hf_data.py`를 준비했고, 성공 전 `data.revision`은 비워 둔다. |
 | 2026-11-02 | 선행연구·주입 위치 검증 | Liu et al., ICLR 2026 논문은 상위 층 MLP 활성에 노이즈를 주입하고 층별 비교 실험을 보고한다. pyvene 소스에서 Llama·Qwen2의 `mlp_activation`이 모두 `mlp.act_fn` 출력 hook임을 확인했다. | 현재 `src/hook.py`의 위치는 pyvene 매핑과 일치한다. 저자의 실제 실행 설정은 논문에 없으므로 완전 재현 여부는 미확인. 인계 문서 U-3·§9.1·D-10 갱신. |

@@ -1,0 +1,13 @@
+{
+  "name": "diagnostics_20261112",
+  "after_stage": "baseline_20261112",
+  "wait_timeout_seconds": 10800,
+  "require_initial_probe": true,
+  "commands": [
+    ["-m", "scripts.measure_runtime"],
+    ["-m", "scripts.diagnose_gradients", "--split", "dev_base", "--fd-only"],
+    ["-m", "scripts.diagnose_gradients", "--split", "dev_base"],
+    ["-m", "scripts.diagnose_gradients", "--split", "dev_select"],
+    ["-m", "scripts.diagnose_gradients", "--split", "dev_anal"]
+  ]
+}

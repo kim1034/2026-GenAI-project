@@ -176,6 +176,7 @@ def main() -> None:
     completed = 0
     try:
         for bank_row, row in enumerate(rows):
+            problem_started = time.monotonic()
             result_path = output_dir / f"{row['id']}.json"
             if result_path.exists():
                 existing = json.loads(result_path.read_text(encoding="utf-8"))
@@ -210,6 +211,7 @@ def main() -> None:
                     "basis": run.get("basis") or "NA", "seed_set": run["seed_set"],
                     "temperature": run["temperature"], "n_rows": run["n_rows"],
                     "text": text, "n_new_tokens": lengths[index],
+                    "token_ids": tokens[index, :lengths[index]].tolist(),
                     "finish_reason": finishes[index], "answer": answer,
                     "extract_path": "anchor" if answer != INVALID else "invalid",
                     "answer_lenient": extract_lenient(text),
@@ -221,6 +223,9 @@ def main() -> None:
                 })
             json_write(result_path, result)
             completed += 1
+            print(json.dumps({"run_id": name, "completed": completed, "total": len(rows),
+                              "problem_id": row["id"], "seconds": time.monotonic() - problem_started},
+                             ensure_ascii=False), flush=True)
             if completed % 10 == 0:
                 manifest.update({"completed_problems": completed, "elapsed_seconds": time.monotonic() - started})
                 json_write(manifest_path, manifest)

@@ -1,0 +1,10 @@
+{
+  "name": "baseline_20261112",
+  "require_initial_probe": true,
+  "commands": [
+    ["-m", "scripts.run_experiment", "configs/runs/dev_base_greedy.yaml"],
+    ["-m", "scripts.calibrate_rho"],
+    ["-m", "scripts.run_experiment", "configs/runs/dev_select_greedy.yaml"],
+    ["-m", "scripts.run_experiment", "configs/runs/dev_anal_greedy.yaml"]
+  ]
+}
