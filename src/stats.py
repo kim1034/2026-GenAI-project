@@ -10,13 +10,48 @@ from src.rng import rng_for
 
 
 def _inputs(labels: Sequence[int], scores: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    y = np.asarray(labels, dtype=np.int8)
+    y = np.asarray(labels)
     x = np.asarray(scores, dtype=np.float64)
     if y.ndim != 1 or x.ndim not in (1, 2) or x.shape[0] != len(y):
         raise ValueError("scores must align with a one-dimensional label vector")
     if not np.all(np.isfinite(x)) or set(np.unique(y)) != {0, 1}:
         raise ValueError("finite scores and both label classes are required")
-    return y, x[:, None] if x.ndim == 1 else x
+    return y.astype(np.int8), x[:, None] if x.ndim == 1 else x
+
+
+def shared_subset_bootstrap(labels, scores_by_condition, comparisons, *, repeats=2000, analysis_no=50, global_seed=2026):
+    """Keep one sampled problem index for every condition and subset in each attempt."""
+    if not isinstance(repeats, (int, np.integer)) or isinstance(repeats, bool) or repeats < 2:
+        raise ValueError("at least two bootstrap attempts are required")
+    if not scores_by_condition or not comparisons:
+        raise ValueError("conditions and comparisons are required")
+    checked = {name: _inputs(labels, scores)[1] for name, scores in scores_by_condition.items()}
+    first = next(iter(checked.values()))
+    y, _ = _inputs(labels, first)
+    if any(scores.shape != first.shape for scores in checked.values()):
+        raise ValueError("all conditions require the same response subset shape")
+    if any(len(pair) != 2 or any(name not in checked for name in pair) for pair in comparisons):
+        raise ValueError("comparison refers to a missing condition")
+    rng = rng_for(10, analysis_no, global_seed=global_seed)
+    indices = rng.integers(0, len(y), size=(repeats, len(y)))
+    valid = np.zeros(repeats, dtype=bool)
+    differences = np.full((repeats, len(comparisons), first.shape[1]), np.nan)
+    for attempt, index in enumerate(indices):
+        selected_y = y[index]
+        if selected_y.min() == selected_y.max():
+            continue
+        valid[attempt] = True
+        aucs = {name: np.array([roc_auc_score(selected_y, scores[index, j]) for j in range(first.shape[1])])
+                for name, scores in checked.items()}
+        for number, (a, b) in enumerate(comparisons):
+            differences[attempt, number] = aucs[a] - aucs[b]
+    if valid.sum() < 2:
+        raise ValueError("too few bootstrap attempts contain both label classes")
+    point = np.array([[roc_auc_score(y, checked[a][:, j]) - roc_auc_score(y, checked[b][:, j])
+                       for j in range(first.shape[1])] for a, b in comparisons])
+    return {"indices": indices, "valid_mask": valid, "subset_deltas": differences,
+            "point_subset_deltas": point, "attempted": repeats, "valid": int(valid.sum()),
+            "skipped": int((~valid).sum())}
 
 
 def mean_auroc(labels: Sequence[int], scores: np.ndarray) -> float:
