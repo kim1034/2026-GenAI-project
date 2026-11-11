@@ -51,6 +51,14 @@ def run_id(run: dict) -> str:
     if run.get("row_start", 0):
         end = run["row_start"] + run["n_rows"] - 1
         name += f"_rows{run['row_start']}-{end}"
+    version = run.get("id_version", 1)
+    if version not in (1, 2):
+        raise ValueError("unsupported run ID version")
+    if version == 2:
+        exact = {"alpha": None if run.get("alpha") is None else float(run["alpha"]),
+                 "temperature": float(run["temperature"])}
+        canonical = json.dumps(exact, sort_keys=True, separators=(",", ":"), allow_nan=False)
+        name += "_v2_" + hashlib.sha256(canonical.encode("ascii")).hexdigest()[:16]
     return name
 
 
@@ -152,6 +160,9 @@ def main() -> None:
     else:
         manifest = {
             "run_id": name, "status": "running", "started_at_utc": datetime.now(timezone.utc).isoformat(),
+            "run_parameters": run, "base_config_snapshot": base,
+            "alpha": run.get("alpha"), "temperature": run["temperature"],
+            "id_version": run.get("id_version", 1),
             "condition": run["condition"], "split": run["split"], "n_rows": run["n_rows"],
             "row_start": run.get("row_start", 0), "problem_count": len(rows),
             "config_sha256": config_hash, "run_config_sha256": run_hash,
