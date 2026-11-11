@@ -158,6 +158,8 @@ def main() -> None:
     run_hash = sha256(run_path)
     problem_ids = [row["id"] for row in rows]
     bank = None
+    rho_path = ROOT / base["noise"]["rho_file"] if run["condition"] not in ("A", "Ap", "B", "Bc", "greedy") else None
+    rho_digest = sha256(rho_path) if rho_path else None
     bank_file = None
     bank_manifest_path = None
     if run["condition"] not in ("A", "Ap", "greedy"):
@@ -169,6 +171,8 @@ def main() -> None:
 
     if manifest_path.exists():
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if rho_path and manifest.get("rho_sha256") != rho_digest:
+            raise RuntimeError("rho calibration changed or its original hash was not recorded")
         if manifest["run_config_sha256"] != run_hash or manifest["config_sha256"] != config_hash:
             raise RuntimeError("existing run ID has a different configuration")
         if manifest["fewshot_sha256"] != sha256(ROOT / base["prompt"]["fewshot_file"]) or manifest["system_sha256"] != sha256(ROOT / base["prompt"]["system_file"]):
@@ -187,6 +191,8 @@ def main() -> None:
             "run_parameters": run, "base_config_snapshot": base,
             "alpha": run.get("alpha"), "temperature": run["temperature"],
             "id_version": run.get("id_version", 1),
+            "rho_sha256": rho_digest,
+            "rho_snapshot": json.loads(rho_path.read_text(encoding="utf-8")) if rho_path else None,
             "condition": run["condition"], "split": run["split"], "n_rows": run["n_rows"],
             "row_start": run.get("row_start", 0), "problem_count": len(rows),
             "config_sha256": config_hash, "run_config_sha256": run_hash,
@@ -213,6 +219,8 @@ def main() -> None:
     })
     json_write(manifest_path, manifest)
     scales = _layer_scales(base, run["condition"], run.get("alpha"))
+    if rho_path and sha256(rho_path) != rho_digest:
+        raise RuntimeError("rho calibration changed while initializing the run")
     hook = MLPNoise(model, base["noise"]["layers_0idx"], scales)
     started = time.monotonic()
     completed = 0
