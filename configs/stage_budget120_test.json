@@ -1,0 +1,5 @@
+{
+  "name": "budget120_test_followthrough",
+  "require_initial_probe": true,
+  "commands": [["-m", "scripts.run_budget_test"]]
+}
