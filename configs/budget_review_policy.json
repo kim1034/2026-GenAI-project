@@ -1,6 +1,7 @@
 {
   "hourly_rate_krw": 1261,
   "rate_source": "user_confirmed",
+  "generate_budget_report": false,
   "user_direction": "Maintain the existing experiment plan, proceed with experiments and revise the budget as measured usage accumulates.",
   "previous_planning_hours": 120,
   "expanded_fixed_cap_hours": null,

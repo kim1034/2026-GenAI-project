@@ -12,8 +12,9 @@ def main():
     parser.add_argument("--split", choices=["dev_base", "dev_select", "dev_anal"], default="dev_base")
     parser.add_argument("--conditions", nargs="+", choices=["B", "C", "D", "E", "T5", "S"], default=["B", "C", "D", "E", "T5"])
     parser.add_argument("--workers", type=int, default=8)
+    parser.add_argument("--base-config", default="configs/base.yaml")
     args = parser.parse_args()
-    config = load_config(ROOT / "configs/base.yaml")
+    config = load_config(ROOT / args.base_config)
     ids = (ROOT / f"data/splits/{args.split}.ids").read_text().splitlines()
     n_rows = config["decode"]["k_generate_rehearsal"] if args.split == "dev_anal" else config["decode"]["k_generate_dev"]
     for condition in args.conditions:

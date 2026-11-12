@@ -1,0 +1,59 @@
+{
+  "root": "../../..",
+  "a_run_config": "configs/generated/pilot/dev_base_A_aNA_T0.50_NA_s0_k16_v2_56c9bec96a68583d.yaml",
+  "sparse_decision": {
+    "path": "configs/generated/pilot/sparse_decision.json",
+    "sha256": "dd242cda08cb8cae0c12aa2622e654b90e01ba3df0e645c338e58d91a085b5e9"
+  },
+  "conditions": {
+    "C": {
+      "expected_alphas": [
+        0.0125,
+        0.025,
+        0.05,
+        0.1,
+        0.2,
+        0.4,
+        0.8,
+        1.6
+      ],
+      "run_configs": [
+        "configs/generated/pilot/dev_base_C_a0.0125_T0.50_B0_s0_k16_v2_26a1a751f54cc203.yaml",
+        "configs/generated/pilot/dev_base_C_a0.0250_T0.50_B0_s0_k16_v2_da5e4630c7e237bc.yaml",
+        "configs/generated/pilot/dev_base_C_a0.0500_T0.50_B0_s0_k16_v2_f6e2b85d66fac213.yaml",
+        "configs/generated/pilot/dev_base_C_a0.1000_T0.50_B0_s0_k16_v2_f80c366dcac6b8e1.yaml",
+        "configs/generated/pilot/dev_base_C_a0.2000_T0.50_B0_s0_k16_v2_5d244d1e16b78c2b.yaml",
+        "configs/generated/pilot/dev_base_C_a0.4000_T0.50_B0_s0_k16_v2_89057cfe5840a926.yaml",
+        "configs/generated/pilot/dev_base_C_a0.8000_T0.50_B0_s0_k16_v2_0d32f1c24483cb07.yaml",
+        "configs/generated/pilot/dev_base_C_a1.6000_T0.50_B0_s0_k16_v2_638f445fe19d6e62.yaml"
+      ],
+      "output": "outputs/analysis/pilot_C_grid.json"
+    },
+    "S": {
+      "expected_alphas": [
+        0.00625,
+        0.0125,
+        0.025,
+        0.05,
+        0.1,
+        0.2
+      ],
+      "run_configs": [
+        "configs/generated/pilot/dev_base_S_a0.0063_T0.50_B0_s0_k16_v2_3c940c141113e3ca.yaml",
+        "configs/generated/pilot/dev_base_S_a0.0125_T0.50_B0_s0_k16_v2_26a1a751f54cc203.yaml",
+        "configs/generated/pilot/dev_base_S_a0.0250_T0.50_B0_s0_k16_v2_da5e4630c7e237bc.yaml",
+        "configs/generated/pilot/dev_base_S_a0.0500_T0.50_B0_s0_k16_v2_f6e2b85d66fac213.yaml",
+        "configs/generated/pilot/dev_base_S_a0.1000_T0.50_B0_s0_k16_v2_f80c366dcac6b8e1.yaml",
+        "configs/generated/pilot/dev_base_S_a0.2000_T0.50_B0_s0_k16_v2_5d244d1e16b78c2b.yaml"
+      ],
+      "output": "outputs/analysis/pilot_S_grid.json"
+    }
+  },
+  "preparation_only": true,
+  "inputs_sha256": {
+    "configs/base.yaml": "b2d6e46b2dbb14a97d4f97877ffe9ed2fa8094b1038f4737980dd8fed1024520",
+    "calib/rho.json": "e09f9da5b7049e33f8f5c90b8342b9d6fb2d52fdb9a08dab52ccbd9167ece09b",
+    "configs/analysis.yaml": "0ed5c97b18f27d19c7320197353c088eebed2b5ffba6179c95cecd7b2c971509",
+    "calib/sparse_decision.json": "dd242cda08cb8cae0c12aa2622e654b90e01ba3df0e645c338e58d91a085b5e9"
+  }
+}

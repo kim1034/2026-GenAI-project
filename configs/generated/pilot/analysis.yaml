@@ -1,0 +1,10 @@
+# Analysis IDs and random keys are finalized before LOCK.
+primary:
+  comparison: [D, C]
+  bootstrap_key: [10, 1]
+secondary:
+  D_minus_E: {conditions: [D, E], bootstrap_key: [10, 2]}
+  S_minus_C: {conditions: [S, C], bootstrap_key: [10, 100]}
+  C_minus_Ap: {conditions: [C, Ap], bootstrap_key: [10, 101]}
+bootstrap_repeats: 10000
+practical_delta: 0.02
