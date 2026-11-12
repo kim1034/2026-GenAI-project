@@ -2,9 +2,10 @@
   "hourly_rate_krw": 1261,
   "rate_source": "user_confirmed",
   "generate_budget_report": false,
-  "user_direction": "Maintain the existing experiment plan, proceed with experiments and revise the budget as measured usage accumulates.",
+  "user_direction": "Latest instruction: revise the experiment plan to fit the budget. Use the original 120 allocated GPU-hour total unless the user specifies a different amount. Prioritize mandatory GUE-versus-Gaussian comparison; suspend the old large pilot queue pending Astra revision.",
   "previous_planning_hours": 120,
-  "expanded_fixed_cap_hours": null,
+  "expanded_fixed_cap_hours": 120,
+  "old_pilot_queue_suspended": true,
   "additional_conditions_authorized": false,
   "separate_followup_design_limit": 1,
   "accounting": "Keep actual allocated-machine time, completed inference time, remaining forecasts and idle time distinct. Report required, conditional boost, optional P2 and reserve separately."
