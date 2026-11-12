@@ -160,3 +160,12 @@ def test_cpu_receipt_must_pin_the_reproduced_analysis_and_all_artifacts():
     receipt["artifacts_sha256"] = {"analysis.json": "tampered"}
     with pytest.raises(ValueError, match="receipt differs"):
         lock.validate_pipeline_receipt(receipt, {"input_sha256": "input"}, **kwargs)
+
+
+def test_canonical_LOCK_is_independent_of_receipt_json_key_order():
+    receipt = {"config_sha256": "a" * 64, "reviewed_code_commit": "b" * 40,
+        "common_alpha": .1, "development_check": {"scope": "development_pipeline_check", "n": 200},
+        "required_test_runs": [{"condition": "C", "run_id": "fixed", "run_config": "C.yaml",
+                                "rows": 16, "problem_count": 1319}]}
+    stored = json.loads(json.dumps(receipt, sort_keys=True))
+    assert lock.lock_document(receipt, "c" * 64) == lock.lock_document(stored, "c" * 64)

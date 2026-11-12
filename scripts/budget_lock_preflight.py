@@ -251,7 +251,7 @@ def lock_document(receipt, receipt_sha):
         "Development check: " + json.dumps(receipt["development_check"], sort_keys=True),
         "When selection data are reused, their performance is selection-biased and is not independent validation.",
         "Original two-person human extraction/LOCK signatures were not provided; AI review is not human signoff.",
-        "", "```json", json.dumps(receipt["required_test_runs"], indent=2), "```", ""])
+        "", "```json", json.dumps(receipt["required_test_runs"], sort_keys=True, indent=2), "```", ""])
     return content.encode("utf-8")
 
 
