@@ -1,0 +1,43 @@
+{
+  "root": "../../../..",
+  "a_run_config": "configs/generated/budget120/pilot/dev_base_A_aNA_T0.50_NA_s0_k16_v2_56c9bec96a68583d.yaml",
+  "conditions": {
+    "C": {
+      "expected_alphas": [
+        0.0125,
+        0.025,
+        0.05,
+        0.1,
+        0.2,
+        0.4,
+        0.8,
+        1.6
+      ],
+      "run_configs": [
+        "configs/generated/budget120/pilot/dev_base_C_a0.0125_T0.50_B0_s0_k16_v2_26a1a751f54cc203.yaml",
+        "configs/generated/budget120/pilot/dev_base_C_a0.0250_T0.50_B0_s0_k16_v2_da5e4630c7e237bc.yaml",
+        "configs/generated/budget120/pilot/dev_base_C_a0.0500_T0.50_B0_s0_k16_v2_f6e2b85d66fac213.yaml",
+        "configs/generated/budget120/pilot/dev_base_C_a0.1000_T0.50_B0_s0_k16_v2_f80c366dcac6b8e1.yaml",
+        "configs/generated/budget120/pilot/dev_base_C_a0.2000_T0.50_B0_s0_k16_v2_5d244d1e16b78c2b.yaml",
+        "configs/generated/budget120/pilot/dev_base_C_a0.4000_T0.50_B0_s0_k16_v2_89057cfe5840a926.yaml",
+        "configs/generated/budget120/pilot/dev_base_C_a0.8000_T0.50_B0_s0_k16_v2_0d32f1c24483cb07.yaml",
+        "configs/generated/budget120/pilot/dev_base_C_a1.6000_T0.50_B0_s0_k16_v2_638f445fe19d6e62.yaml"
+      ],
+      "output": "outputs/analysis/budget120_pilot_C_grid.json"
+    }
+  },
+  "protocol_amendment": "budget120-v1.4",
+  "preparation_only": true,
+  "inputs_sha256": {
+    "configs/base.yaml": "b2d6e46b2dbb14a97d4f97877ffe9ed2fa8094b1038f4737980dd8fed1024520",
+    "calib/rho.json": "e09f9da5b7049e33f8f5c90b8342b9d6fb2d52fdb9a08dab52ccbd9167ece09b",
+    "configs/analysis.yaml": "0ed5c97b18f27d19c7320197353c088eebed2b5ffba6179c95cecd7b2c971509",
+    "configs/budget120_protocol.json": "dc26f4f30e0cf3417970dfb54da3bfc06b1567a445fb4d3097a0d5cd2a49b977",
+    "prompts/system.txt": "64293c70cb638482b2fc7ee5676c23840728294bda0a58ed719d378e61c456b3",
+    "prompts/gsm8k_8shot.json": "4d64483f2d85282fe8893ef53776986c348b2f0bb60b46b5ed62065a10590b11",
+    "data/splits/dev_base.ids": "b072ed6a3d1586b949bbc905a4f92f2f72b8fe4a5f91215ecc0eaf6ed14e4c08",
+    "data/splits/dev_select.ids": "56bcab19fbe4db5ea351e2adb7f2de5137246ff34099e002abdfd11df72a3918",
+    "data/splits/dev_anal.ids": "da2251aa3520ad05cdae7d262352bb25d73e71e6fc0cc16f03306738888a2aed",
+    "data/splits/test.ids": "26169fddb24434a20d07cd3a12946bae381786574fd07da346d96f0f97eab25e"
+  }
+}

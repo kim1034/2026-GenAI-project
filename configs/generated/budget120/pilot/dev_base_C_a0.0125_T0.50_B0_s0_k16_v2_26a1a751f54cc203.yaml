@@ -1,0 +1,10 @@
+base_config: configs/generated/budget120/pilot/base.yaml
+split: dev_base
+condition: C
+alpha: 0.0125
+temperature: 0.5
+basis: B0
+seed_set: 0
+row_start: 0
+n_rows: 16
+id_version: 2
