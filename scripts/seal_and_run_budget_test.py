@@ -13,7 +13,7 @@ import re
 import subprocess
 from datetime import datetime, timezone
 
-from scripts.budget_lock_preflight import (FINAL, RECEIPT, validate_pipeline_receipt,
+from scripts.budget_lock_preflight import (FINAL, RECEIPT, lock_document, validate_pipeline_receipt,
                                            validate_rehearsal, verify_lock)
 from scripts.finalize_budget_selection import _command, _require_outer_lock
 from scripts.prepare_budget_final_runs import prepare as prepare_final
@@ -268,6 +268,8 @@ def _pending_seal(root):
             or re.search(r"(?m)^reviewed_code_commit: " + re.escape(reviewed) + r"$", content) is None
             or "LOCK.md" in _tracked(root, reviewed)):
         raise ValueError("LOCK does not pin a valid preflight receipt/reviewed code commit")
+    if lock_path.read_bytes() != lock_document(receipt, sha256(receipt_path)):
+        raise ValueError("LOCK content differs from canonical preflight bytes before commit")
     _pins(root, receipt["evidence_sha256"])
     if receipt["evidence_sha256"].get(CPU_RECEIPT) != sha256(root / CPU_RECEIPT):
         raise ValueError("LOCK receipt must pin the verified CPU pipeline receipt")

@@ -77,12 +77,13 @@ def repository(tmp_path, monkeypatch):
         if argv == ["scripts.budget_lock_preflight", "--write-lock"]:
             assert not git(root, "status", "--porcelain")
             receipt = {"status": "ready_for_lock", "reviewed_code_commit": git(root, "rev-parse", "HEAD"),
+                       "config_sha256": "a" * 64, "common_alpha": .1,
+                       "development_check": {}, "required_test_runs": [],
                        "base_config": "base.yaml", "evidence_sha256": {name: sha256(root / name)
                        for name in sealer._tracked(root, "HEAD")}}
             receipt["evidence_sha256"][sealer.CPU_RECEIPT] = sha256(root / sealer.CPU_RECEIPT)
             write_json(root / sealer.RECEIPT, receipt)
-            (root / "LOCK.md").write_text("# LOCK\npreflight_sha256: " + sha256(root / sealer.RECEIPT)
-                + "\nreviewed_code_commit: " + receipt["reviewed_code_commit"] + "\n", encoding="utf-8")
+            (root / "LOCK.md").write_bytes(lock.lock_document(receipt, sha256(root / sealer.RECEIPT)))
         elif argv == ["scripts.budget_lock_preflight", "--verify-lock"]:
             lock.verify_lock(root)  # Exercise the actual hash/receipt verifier.
         elif argv == ["scripts.run_budget_test"]:
@@ -175,6 +176,32 @@ def test_receipt_or_source_tampering_on_resume_is_rejected(repository):
     with pytest.raises(ValueError, match="pin"):
         sealer.seal_and_run(root, reviewed_code_commit=anchor)
     assert git(root, "rev-parse", "HEAD") == result["lock_commit"]
+
+
+@pytest.mark.parametrize("mutation", ["free_body", "human_signature"])
+def test_uncommitted_LOCK_body_tampering_is_rejected_before_commit_or_tag(repository, monkeypatch, mutation):
+    root, anchor, _, commands = repository
+    original = sealer._commit
+    def interrupted(project, paths, message, **kwargs):
+        if paths == ["LOCK.md"]:
+            raise InterruptedError("stop before LOCK commit")
+        return original(project, paths, message, **kwargs)
+    monkeypatch.setattr(sealer, "_commit", interrupted)
+    with pytest.raises(InterruptedError):
+        sealer.seal_and_run(root, reviewed_code_commit=anchor)
+    reviewed = git(root, "rev-parse", "HEAD")
+    path = root / "LOCK.md"
+    content = path.read_bytes()
+    changed = (content + b"\nUnreviewed registration change\n" if mutation == "free_body" else
+               content.replace(b"human_signatures: not_provided", b"human_signatures: provided"))
+    assert changed != content
+    path.write_bytes(changed)
+    monkeypatch.setattr(sealer, "_commit", original)
+    with pytest.raises(ValueError, match="canonical"):
+        sealer.seal_and_run(root, reviewed_code_commit=anchor)
+    assert git(root, "rev-parse", "HEAD") == reviewed
+    assert sealer._tag(root) is None
+    assert commands == [["scripts.budget_lock_preflight", "--write-lock"]]
 
 
 def test_committed_LOCK_without_tag_resumes_same_L(repository, monkeypatch):
