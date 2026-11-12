@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "base_protocol": "budget120-v1.4",
+  "reviewer": "Astra (AI)",
+  "change_reason": "User requested proceeding directly to test without separate development GPU rehearsal.",
+  "generate_dev_anal_responses": false,
+  "pipeline_check_split": "dev_select",
+  "require_selection_complete_before_check": true,
+  "reuse_only_final_selected_CDE_and_existing_greedy": true,
+  "pipeline_check_scope": "development_pipeline_check",
+  "independent_validation": false,
+  "confirmatory": false,
+  "reselection_after_pipeline_check": false,
+  "test_problems": 1319,
+  "test_rows_per_noisy_condition": 16,
+  "automatic_time_limit_stop": false,
+  "gpu_return": "manual_user",
+  "frozen_pilot_base_analysis_protocol_bytes": "preserve"
+}
