@@ -1,7 +1,7 @@
 """Offline V1.4 analysis; all four final runs must verify before any statistics.
 
 Usage: python -m scripts.analyze_budget120 plan.json
-Plan: root, split (dev_anal|test), selection_file, base_config,
+Plan: root, split (dev_select|dev_anal|test), selection_file, base_config,
 run_configs {greedy,C,D,E}, output_dir. Paths are relative to root, except root
 itself, which is relative to the plan. Never launches a model or GPU job.
 """
@@ -92,9 +92,9 @@ def _load_verified(root, run_path, condition, split, alpha, base, ids):
                  "temperature": required["temperature"], "id_version": run.get("id_version", 1)}
     if any(key in manifest and manifest[key] != value for key, value in snapshots.items()):
         raise ValueError("Manifest parameter snapshot changed")
-    # Legacy dev_anal greedy is an immutable label reference. Its original
+    # Legacy development greedy is an immutable label reference. Its original
     # runtime metadata is retained, never upgraded or claimed equivalent.
-    runtime = None if condition == "greedy" and split == "dev_anal" else _runtime(manifest, base)
+    runtime = None if condition == "greedy" and split in ("dev_select", "dev_anal") else _runtime(manifest, base)
     if runtime is not None:
         for source, digest in runtime["source_sha256"].items():
             if sha256(_path(root, source)) != digest:
@@ -185,8 +185,8 @@ def verify_inputs(plan_path):
     plan = _read(plan_path)
     root = (plan_path.parent / plan["root"]).resolve()
     split = plan["split"]
-    if split not in ("dev_anal", "test") or set(plan["run_configs"]) != {"greedy", *CONDITIONS}:
-        raise ValueError("Analysis requires dev_anal/test and exactly greedy/C/D/E")
+    if split not in ("dev_select", "dev_anal", "test") or set(plan["run_configs"]) != {"greedy", *CONDITIONS}:
+        raise ValueError("Analysis requires dev_select/dev_anal/test and exactly greedy/C/D/E")
     output = _path(root, plan["output_dir"])
     if output == root or not any(output.is_relative_to(root / folder) and output != root / folder
                                  for folder in ("outputs", "reports")):
@@ -206,11 +206,25 @@ def verify_inputs(plan_path):
         raise ValueError("Unrecognized protocol amendment")
     if split == "test":
         assert_test_locked(base, root / "LOCK.md")
+    policy_path = root / "configs/development_check_policy.json"
+    if split == "dev_select":
+        if not policy_path.is_file():
+            raise ValueError("dev_select pipeline check requires development_check_policy.json")
+        policy = _read(policy_path)
+        if (policy.get("generate_dev_anal_responses") is not False
+                or policy.get("pipeline_check_split") != "dev_select"):
+            raise ValueError("Development check policy does not authorize selected-data reuse")
     selection_path = _path(root, plan["selection_file"])
     selection, selection_runtime = _verify_selection(root, selection_path, base)
+    if split == "dev_select":
+        for condition in CONDITIONS:
+            if _path(root, plan["run_configs"][condition]) != _path(root, selection["runs"][condition]["run_config"]):
+                raise ValueError("Pipeline check must reuse the exact final selected C/D/E run configs")
+        if _path(root, plan["run_configs"]["greedy"]) != root / "configs/runs/dev_select_greedy.yaml":
+            raise ValueError("Pipeline check must reuse configs/runs/dev_select_greedy.yaml")
     data = load_split(root, split, base)  # Includes the existing test seal, before test answers are read.
     ids = [row["id"] for row in data]
-    expected_n = 1319 if split == "test" else 50
+    expected_n = {"test": 1319, "dev_anal": 50, "dev_select": 200}[split]
     if len(ids) != expected_n:
         raise ValueError("Unexpected final split count")
     runs, provenance = {}, {}
@@ -230,6 +244,7 @@ def verify_inputs(plan_path):
                "src/config.py", "src/data.py", "src/extract.py", "src/rng.py")]
     inputs = {"plan_sha256": sha256(plan_path), "selection_sha256": sha256(selection_path),
               "base_config_sha256": sha256(base_path), "protocol_sha256": sha256(protocol_path),
+              "development_check_policy_sha256": sha256(policy_path) if policy_path.is_file() else None,
               "ids_sha256": sha256(root / f"data/splits/{split}.ids"),
               "processed_sha256": sha256(root / f"data/processed/{'test' if split == 'test' else 'train'}.jsonl"),
               "LOCK_sha256": sha256(root / "LOCK.md") if (root / "LOCK.md").is_file() else None,
@@ -304,9 +319,12 @@ def compute_statistics(verified):
     if arithmetic is not None and abs(arithmetic) > 1e-14:
         raise ValueError("D-C = D-E + E-C arithmetic check failed")
     confirmatory = verified["split"] == "test"
+    selection_data_reused = verified["split"] == "dev_select"
+    scope = "development_pipeline_check" if selection_data_reused else "confirmatory_test" if confirmatory else "rehearsal"
     v = comparisons["D-C"]["verdict"]
     report = {"schema_version": 1, "status": "complete", "protocol_amendment": REVISION,
-              "scope": "confirmatory_test" if confirmatory else "rehearsal", "confirmatory": confirmatory,
+              "scope": scope, "confirmatory": confirmatory,
+              "selection_data_reused": selection_data_reused, "independent_evaluation": not selection_data_reused,
               "split": verified["split"], "common_alpha": verified["alpha"], "n": len(ids),
               "practical_delta": .02,
               "inputs": verified["inputs"], "input_sha256": _fingerprint(verified["inputs"]),
@@ -317,7 +335,8 @@ def compute_statistics(verified):
                             "se_ddof": 1, "ci": "percentile_95", "keys": {"D-C": [10, 1], "D-E": [10, 2], "E-C": None}},
               "arithmetic_residual": arithmetic,
               "PR6": {"verdict": v, "outcome": PR6[v] if confirmatory and v else None,
-                      "reason": None if confirmatory else "rehearsal calculation check; no confirmatory conclusion"},
+                      "reason": None if confirmatory else ("selection data reused for pipeline check; no independent evaluation or confirmatory conclusion"
+                                                            if selection_data_reused else "rehearsal calculation check; no confirmatory conclusion")},
               "not_performed": ["original PR1 confirmation", "PR2a", "PR2b", "PR2c", "PR3_T5", "PR3_S", "PR4", "PR5",
                                 "S", "B", "Ap", "T5", "P2", "boost", "test gradients", "original Holm family", "p values"],
               "analysis_unavailable_reason": None if complete else "greedy labels contain only one class"}

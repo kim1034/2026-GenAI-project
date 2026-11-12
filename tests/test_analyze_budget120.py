@@ -110,6 +110,11 @@ def evidence(tmp_path):
                  "common_alpha": .1, "inputs_sha256": {"src/synthetic.py": sha256(source)},
                  "runs": {name: make_run("dev_select", name) for name in ("A", "C", "D", "E")}}
     write(tmp_path / "selection.json", selection)
+    selected_greedy = make_run("dev_select", "greedy")
+    original_greedy = tmp_path / selected_greedy["run_config"]
+    legacy_greedy = tmp_path / "configs/runs/dev_select_greedy.yaml"
+    legacy_greedy.parent.mkdir(parents=True)
+    legacy_greedy.write_bytes(original_greedy.read_bytes())
     final = {name: make_run("dev_anal", name) for name in ("greedy", "C", "D", "E")}
     plan = {"root": ".", "split": "dev_anal", "base_config": "configs/base.yaml", "selection_file": "selection.json",
             "run_configs": {name: spec["run_config"] for name, spec in final.items()}, "output_dir": "outputs/analysis/rehearsal"}
@@ -290,3 +295,76 @@ def test_bootstrap_skips_single_class_attempts_without_redraw():
 def test_npz_fixed_zip_metadata_is_deterministic():
     arrays = {"x": np.array([1, 2]), "nan": np.array([np.nan])}
     assert analysis._npz(arrays) == analysis._npz(arrays)
+
+
+def _pipeline_plan(evidence, *, policy=True):
+    root, plan, _ = evidence
+    selection = json.loads((root / "selection.json").read_text())
+    plan = {**plan, "split": "dev_select", "output_dir": "outputs/analysis/budget120/dev_select",
+            "run_configs": {"greedy": "configs/runs/dev_select_greedy.yaml",
+                            **{name: selection["runs"][name]["run_config"] for name in analysis.CONDITIONS}}}
+    if policy:
+        write(root / "configs/development_check_policy.json", {
+            "generate_dev_anal_responses": False, "pipeline_check_split": "dev_select"})
+    write(root / "pipeline_plan.json", plan)
+    return root, plan
+
+
+def test_reused_dev_select_full_cpu_pipeline_is_explicitly_nonindependent(evidence, fast_bootstrap):
+    root, _ = _pipeline_plan(evidence)
+    verified = analysis.verify_inputs(root / "pipeline_plan.json")
+    assert verified["inputs"]["runs"]["greedy"]["runtime"] is None
+    assert "legacy label reference" in verified["inputs"]["runs"]["greedy"]["runtime_comparison"]
+    raw_inputs = {path: path.read_bytes() for path in (root / "outputs/samples").glob("*.jsonl")}
+    report = analysis.analyze_budget120(root / "pipeline_plan.json")
+    assert fast_bootstrap == [1, 2]
+    assert report["n"] == 200 and report["scope"] == "development_pipeline_check"
+    assert report["selection_data_reused"] is True
+    assert report["independent_evaluation"] is False and report["confirmatory"] is False
+    assert report["PR6"]["outcome"] is None
+    assert all(row["confirmatory"] is False for row in report["comparisons"].values())
+    assert report["inputs"]["development_check_policy_sha256"] == sha256(root / "configs/development_check_policy.json")
+    output = root / "outputs/analysis/budget120/dev_select"
+    assert {path.name for path in output.iterdir()} == {
+        "analysis.json", "bootstrap.npz", "metrics.csv", "comparisons.csv", "k_curve.csv",
+        "problem_scores.csv", "figure2.png", "실험결과.md"}
+    with np.load(output / "bootstrap.npz", allow_pickle=False) as saved:
+        assert saved["condition_scores"].shape == (3, 200, 2)
+        assert saved["D-C_indices"].shape == (16, 200)
+    assert all(path.read_bytes() == raw for path, raw in raw_inputs.items())
+
+
+@pytest.mark.parametrize("failure", ["no_policy", "wrong_policy", "selection_incomplete", "different_C", "different_greedy"])
+def test_pipeline_check_requires_policy_complete_selection_and_exact_reused_runs(evidence, monkeypatch, failure):
+    root, plan = _pipeline_plan(evidence, policy=failure != "no_policy")
+    if failure == "wrong_policy":
+        write(root / "configs/development_check_policy.json", {
+            "generate_dev_anal_responses": True, "pipeline_check_split": "dev_select"})
+    elif failure == "selection_incomplete":
+        path = root / "selection.json"
+        selection = json.loads(path.read_text())
+        selection["status"] = "running"
+        write(path, selection)
+    elif failure in ("different_C", "different_greedy"):
+        name = "C" if failure == "different_C" else "greedy"
+        original = root / plan["run_configs"][name]
+        duplicate = root / "configs/duplicate.yaml"
+        duplicate.write_bytes(original.read_bytes())
+        plan["run_configs"][name] = "configs/duplicate.yaml"
+        write(root / "pipeline_plan.json", plan)
+    monkeypatch.setattr(analysis, "compute_statistics", lambda *_: pytest.fail("statistics before valid selected-data reuse"))
+    with pytest.raises(ValueError):
+        analysis.analyze_budget120(root / "pipeline_plan.json")
+    assert not (root / "outputs/analysis").exists()
+
+
+def test_present_policy_is_hashed_for_other_modes_without_changing_test_guard(evidence, monkeypatch):
+    root, plan, _ = evidence
+    policy = root / "configs/development_check_policy.json"
+    write(policy, {"generate_dev_anal_responses": False, "pipeline_check_split": "dev_select"})
+    assert analysis.verify_inputs(root / "plan.json")["inputs"]["development_check_policy_sha256"] == sha256(policy)
+    plan["split"] = "test"
+    write(root / "plan.json", plan)
+    monkeypatch.setattr(analysis, "assert_test_locked", lambda *_: (_ for _ in ()).throw(PermissionError("still sealed")))
+    with pytest.raises(PermissionError, match="still sealed"):
+        analysis.verify_inputs(root / "plan.json")
