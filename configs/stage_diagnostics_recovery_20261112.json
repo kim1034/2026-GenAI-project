@@ -1,0 +1,11 @@
+{
+  "name": "diagnostics_recovery_20261112",
+  "require_initial_probe": true,
+  "commands": [
+    ["-m", "scripts.diagnose_gradients", "--split", "dev_base", "--fd-only"],
+    ["-m", "scripts.diagnose_gradients", "--split", "dev_base"],
+    ["-m", "scripts.diagnose_gradients", "--split", "dev_select"],
+    ["-m", "scripts.diagnose_gradients", "--split", "dev_anal"],
+    ["-m", "scripts.validate_gpu"]
+  ]
+}

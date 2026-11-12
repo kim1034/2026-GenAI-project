@@ -77,7 +77,7 @@ class GradientDiagnostic:
             info.update({f"{key}_{kind}": value for key, value in summarize_gradient(gradient).items()})
         if fd_direction is not None:
             direction = np.asarray(fd_direction, dtype=np.float32)
-            h = 1e-3 * np.sqrt(self.d)
+            h = float(1e-3 * np.sqrt(self.d))
             u = torch.tensor(direction, device="cuda")
             with torch.no_grad():
                 plus = self.values(prompt, tokens, h * u, fixed)[:2]
@@ -86,7 +86,7 @@ class GradientDiagnostic:
             for index, (kind, gradient) in enumerate((("g_m", g_m), ("g_seq", g_seq))):
                 fd = (float(plus[index]) - float(minus[index])) / (2 * h)
                 dot = float(np.dot(gradient.astype(np.float64), direction))
-                error = abs(fd - dot) / max(abs(fd), abs(dot), 1e-12)
+                error = float(abs(fd - dot) / max(abs(fd), abs(dot), 1e-12))
                 info["finite_difference"][kind] = {"central_difference": fd, "autograd": dot,
-                                                    "relative_error": error, "passed": error < 0.05}
+                                                    "relative_error": error, "passed": bool(error < 0.05)}
         return info, g_m, g_seq
