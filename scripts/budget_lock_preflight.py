@@ -237,6 +237,24 @@ def preflight(root):
                       "G4": "mechanical_LOCK_pending; human_signatures_not_provided"}}
 
 
+def lock_document(receipt, receipt_sha):
+    """Canonical LOCK bytes, reproducible from the pinned preflight receipt."""
+    content = "# V1.4 experiment LOCK\n\n" + "\n".join([
+        "config_sha256: " + receipt["config_sha256"],
+        "preflight_sha256: " + receipt_sha,
+        "reviewed_code_commit: " + receipt["reviewed_code_commit"],
+        "common_alpha: " + str(receipt["common_alpha"]),
+        "reviewer_type: AI", "human_signatures: not_provided", "gpu_return: manual_user",
+        "automatic_time_limit_stop: false", "",
+        "V1.4 overrides dormant original boost/budget/32-row fields. Only greedy/C/D/E test runs below are authorized.",
+        "D-C is confirmatory; D-E descriptive; E-C point only. No re-selection after rehearsal.",
+        "Development check: " + json.dumps(receipt["development_check"], sort_keys=True),
+        "When selection data are reused, their performance is selection-biased and is not independent validation.",
+        "Original two-person human extraction/LOCK signatures were not provided; AI review is not human signoff.",
+        "", "```json", json.dumps(receipt["required_test_runs"], indent=2), "```", ""])
+    return content.encode("utf-8")
+
+
 def verify_lock(root):
     root = Path(root).resolve()
     receipt_path = root / RECEIPT
@@ -247,6 +265,8 @@ def verify_lock(root):
     for name, expected in receipt["evidence_sha256"].items():
         if sha256(_path(root, name)) != expected:
             raise ValueError("Locked evidence changed: " + name)
+    if (root / "LOCK.md").read_bytes() != lock_document(receipt, sha256(receipt_path)):
+        raise ValueError("LOCK content differs from the canonical preflight evidence")
     assert_test_locked(load_config(root / receipt["base_config"]), root / "LOCK.md")
     return {"status": "verified_test_seal", "lock_commit": _git(root, "rev-parse", "HEAD"),
             "LOCK_sha256": sha256(root / "LOCK.md"), "preflight_sha256": sha256(receipt_path)}
@@ -266,20 +286,7 @@ def main():
         raw = (json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode("utf-8")
         _immutable(ROOT / RECEIPT, raw)
         if args.write_lock:
-            content = "# V1.4 experiment LOCK\n\n" + "\n".join([
-                "config_sha256: " + result["config_sha256"],
-                "preflight_sha256: " + sha256(ROOT / RECEIPT),
-                "reviewed_code_commit: " + result["reviewed_code_commit"],
-                "common_alpha: " + str(result["common_alpha"]),
-                "reviewer_type: AI", "human_signatures: not_provided", "gpu_return: manual_user",
-                "automatic_time_limit_stop: false", "",
-                "V1.4 overrides dormant original boost/budget/32-row fields. Only greedy/C/D/E test runs below are authorized.",
-                "D-C is confirmatory; D-E descriptive; E-C point only. No re-selection after rehearsal.",
-                "Development check: " + json.dumps(result["development_check"], sort_keys=True),
-                "When selection data are reused, their performance is selection-biased and is not independent validation.",
-                "Original two-person human extraction/LOCK signatures were not provided; AI review is not human signoff.",
-                "", "```json", json.dumps(result["required_test_runs"], indent=2), "```", ""])
-            _immutable(ROOT / "LOCK.md", content.encode("utf-8"))
+            _immutable(ROOT / "LOCK.md", lock_document(result, sha256(ROOT / RECEIPT)))
     print(json.dumps({key: result[key] for key in ("status",) if key in result}))
 
 
