@@ -1,4 +1,4 @@
-"""Prepare seven frozen rehearsal/test run configs after verified C/D/E selection.
+"""Prepare frozen final run configs after verified C/D/E selection.
 
 This command reads development evidence only and never launches inference.
 The test stage starts with the runner's existing LOCK guard before model load.
@@ -80,6 +80,16 @@ def prepare(root, selection, destination):
     protocol = json.loads(protocol_path.read_text(encoding="utf-8"))
     if protocol.get("protocol_amendment") != "budget120-v1.4":
         raise ValueError("Frozen protocol amendment does not match selection")
+    policy_path = root / "configs/development_check_policy.json"
+    policy = None
+    if policy_path.exists():
+        record(policy_path)
+        policy = json.loads(policy_path.read_text(encoding="utf-8"))
+    reuse_selected = policy is not None and policy.get("generate_dev_anal_responses") is False
+    if reuse_selected and (policy.get("base_protocol") != "budget120-v1.4"
+                          or policy.get("pipeline_check_split") != "dev_select"
+                          or policy.get("reuse_only_final_selected_CDE_and_existing_greedy") is not True):
+        raise ValueError("Development reuse policy must identify the selected dev_select evidence")
     source_runs, baseline = {}, None
     for condition in ("C", "D", "E"):
         reference = decision["runs"][condition]
@@ -109,15 +119,19 @@ def prepare(root, selection, destination):
     for value in (base["noise"]["rho_file"], base["prompt"]["fewshot_file"], base["prompt"]["system_file"],
                   "data/splits/dev_select.ids", "data/processed/train.jsonl"):
         record(value)
-    rehearsal_greedy = "configs/runs/dev_anal_greedy.yaml"
+    check_split = "dev_select" if reuse_selected else "dev_anal"
+    rehearsal_greedy = f"configs/runs/{check_split}_greedy.yaml"
     record(rehearsal_greedy)
     greedy_run = yaml.safe_load((root / rehearsal_greedy).read_text(encoding="utf-8"))
     if any(greedy_run.get(key) != value for key, value in {
-            "split": "dev_anal", "condition": "greedy", "n_rows": 1, "temperature": 0,
+            "split": check_split, "condition": "greedy", "n_rows": 1, "temperature": 0,
             "alpha": None, "seed_set": 0}.items()):
-        raise ValueError("The existing dev_anal greedy label configuration is required")
-    contents, names, configs = {}, set(), {"dev_anal": {}, "test": {}}
-    for split, conditions in (("dev_anal", ("C", "D", "E")), ("test", ("greedy", "C", "D", "E"))):
+        raise ValueError(f"The existing {check_split} greedy label configuration is required")
+    run_splits = [("test", ("greedy", "C", "D", "E"))]
+    if not reuse_selected:
+        run_splits.insert(0, ("dev_anal", ("C", "D", "E")))
+    contents, names, configs = {}, set(), {split: {} for split, _ in run_splits}
+    for split, conditions in run_splits:
         for condition in conditions:
             greedy = condition == "greedy"
             run = {"base_config": BASE_CONFIG, "split": split, "condition": condition,
@@ -141,22 +155,28 @@ def prepare(root, selection, destination):
             elif any(path.exists() for path in (root / "outputs/samples" / name,
                                                 root / "outputs/samples" / f"{name}.jsonl")):
                 raise ValueError(f"Existing final run ID has output without a manifest: {name}")
-    if len(names) != 7:
-        raise ValueError("Exactly seven rehearsal/test configurations are required")
-    rehearsal = [["-m", "scripts.build_bank", configs["dev_anal"][condition]] for condition in ("C", "D", "E")]
-    rehearsal.extend(["-m", "scripts.run_experiment", configs["dev_anal"][condition]] for condition in ("C", "D", "E"))
+    expected_count = 4 if reuse_selected else 7
+    if len(names) != expected_count:
+        raise ValueError(f"Exactly {expected_count} final configurations are required")
     test = [["-m", "scripts.run_experiment", configs["test"]["greedy"]]]
     for condition in ("C", "D", "E"):
         test.extend([["-m", "scripts.build_bank", configs["test"][condition]],
                      ["-m", "scripts.run_experiment", configs["test"][condition]]])
-    for name, commands in (("rehearsal", rehearsal), ("test", test)):
+    stages = [("test", test)]
+    if not reuse_selected:
+        rehearsal = [["-m", "scripts.build_bank", configs["dev_anal"][condition]] for condition in ("C", "D", "E")]
+        rehearsal.extend(["-m", "scripts.run_experiment", configs["dev_anal"][condition]] for condition in ("C", "D", "E"))
+        stages.insert(0, ("rehearsal", rehearsal))
+    for name, commands in stages:
         contents[destination / f"stage_{name}.json"] = _json({
             "name": f"budget120_{name}", "preparation_only": True, "require_initial_probe": True,
             "requires_test_lock": name == "test", "commands": commands,
             "test_access_guard": "scripts.run_experiment -> src.config.assert_test_locked before model load" if name == "test" else None})
-    for name, split in (("rehearsal", "dev_anal"), ("test", "test")):
-        analysis_runs = {"greedy": rehearsal_greedy if split == "dev_anal" else configs["test"]["greedy"],
-                         **{condition: configs[split][condition] for condition in ("C", "D", "E")}}
+    analysis_plans = [("pipeline_check", "dev_select"), ("test", "test")] if reuse_selected else [("rehearsal", "dev_anal"), ("test", "test")]
+    for name, split in analysis_plans:
+        analysis_runs = {"greedy": configs["test"]["greedy"] if split == "test" else rehearsal_greedy,
+                         **{condition: (source_runs[condition]["run_config"] if split == "dev_select"
+                                        else configs[split][condition]) for condition in ("C", "D", "E")}}
         contents[destination / f"{name}_analysis_plan.json"] = _json({
             "root": "/".join([".."] * len(destination.relative_to(root).parts)), "split": split,
             "selection_file": selection_path.relative_to(root).as_posix(), "base_config": BASE_CONFIG,
@@ -169,7 +189,20 @@ def prepare(root, selection, destination):
              "files_sha256": {path.relative_to(root).as_posix(): hashlib.sha256(data).hexdigest()
                               for path, data in contents.items()},
              "test_analysis_requires_all": ["C", "D", "E"]}
+    if policy is not None:
+        final["development_check_policy"] = policy_path.relative_to(root).as_posix()
+        final["development_check_policy_sha256"] = sha256(policy_path)
+    if reuse_selected:
+        final["development_check"] = {
+            "mode": "reuse_selected_development", "split": "dev_select",
+            "analysis_plan": (destination / "pipeline_check_analysis_plan.json").relative_to(root).as_posix(),
+            "independent_evaluation": False, "generate_dev_anal_responses": False}
     contents[destination / "final_plan.json"] = _json(final)
+    if reuse_selected:
+        stale = [destination / "stage_rehearsal.json", destination / "rehearsal_analysis_plan.json",
+                 *destination.glob("dev_anal_*.yaml")]
+        if any(path.exists() for path in stale):
+            raise ValueError("Conflicting existing rehearsal files under development reuse policy")
     for path, data in contents.items():
         if path.exists() and path.read_bytes() != data:
             raise ValueError(f"Conflicting existing final snapshot: {path}")

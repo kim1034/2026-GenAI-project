@@ -190,3 +190,69 @@ def test_duplicate_run_ids_are_rejected(project, monkeypatch):
     with pytest.raises(ValueError, match="IDs collide"):
         preparation.prepare(root, selection, destination)
     assert not destination.exists()
+
+
+def enable_selected_development_reuse(root):
+    policy_path = root / "configs/development_check_policy.json"
+    write_json(policy_path, {"schema_version": 1, "base_protocol": "budget120-v1.4",
+        "generate_dev_anal_responses": False, "pipeline_check_split": "dev_select",
+        "reuse_only_final_selected_CDE_and_existing_greedy": True})
+    write_json(root / "configs/runs/dev_select_greedy.yaml", {"split": "dev_select", "condition": "greedy",
+        "n_rows": 1, "temperature": 0, "alpha": None, "seed_set": 0})
+    return policy_path
+
+
+def test_policy_reuses_selected_evidence_and_prepares_only_four_test_runs(project):
+    root, selection, destination, decision = project
+    policy_path = enable_selected_development_reuse(root)
+    frozen_paths = [root / preparation.BASE_CONFIG, root / "configs/analysis.yaml",
+                    root / "configs/generated/budget120/pilot/protocol.json"]
+    frozen = {path: path.read_bytes() for path in frozen_paths}
+    result = preparation.prepare(root, selection, destination)
+    assert preparation.prepare(root, selection, destination) == result
+    assert result["run_count"] == 4
+    assert all(path.read_bytes() == raw for path, raw in frozen.items())
+    assert len(list(destination.glob("*.yaml"))) == 4
+    assert not list(destination.glob("dev_anal*"))
+    assert not (destination / "stage_rehearsal.json").exists()
+    assert not (destination / "rehearsal_analysis_plan.json").exists()
+    final = json.loads((destination / "final_plan.json").read_text())
+    assert set(final["run_configs"]) == {"test"}
+    assert final["development_check"] == {
+        "mode": "reuse_selected_development", "split": "dev_select",
+        "analysis_plan": "configs/generated/budget120/final/pipeline_check_analysis_plan.json",
+        "independent_evaluation": False, "generate_dev_anal_responses": False}
+    assert final["development_check_policy"] == "configs/development_check_policy.json"
+    assert final["development_check_policy_sha256"] == sha256(policy_path)
+    assert final["inputs_sha256"]["configs/development_check_policy.json"] == sha256(policy_path)
+    pipeline = json.loads((destination / "pipeline_check_analysis_plan.json").read_text())
+    assert (destination / pipeline["root"]).resolve() == root
+    assert pipeline["split"] == "dev_select"
+    assert pipeline["selection_file"] == selection.relative_to(root).as_posix()
+    assert pipeline["output_dir"] == "outputs/analysis/budget120/dev_select"
+    assert pipeline["run_configs"] == {"greedy": "configs/runs/dev_select_greedy.yaml",
+                                        **{c: decision["runs"][c]["run_config"] for c in "CDE"}}
+    assert all(sha256(root / name) == digest for name, digest in final["files_sha256"].items())
+    assert all("dev_anal" not in str(command) for command in
+               json.loads((destination / "stage_test.json").read_text())["commands"])
+
+
+def test_reuse_policy_preserves_complete_selected_run_validation(project):
+    root, selection, destination, decision = project
+    enable_selected_development_reuse(root)
+    decision["common_alpha"] = .2
+    write_json(selection, decision)
+    with pytest.raises(ValueError, match="alpha"):
+        preparation.prepare(root, selection, destination)
+    assert not destination.exists()
+
+
+def test_reuse_policy_refuses_stale_rehearsal_queue(project):
+    root, selection, destination, _ = project
+    enable_selected_development_reuse(root)
+    destination.mkdir(parents=True)
+    stale = destination / "stage_rehearsal.json"
+    stale.write_text("old queue")
+    with pytest.raises(ValueError, match="existing rehearsal files"):
+        preparation.prepare(root, selection, destination)
+    assert list(destination.iterdir()) == [stale]
