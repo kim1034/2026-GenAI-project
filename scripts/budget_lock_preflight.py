@@ -49,12 +49,18 @@ def _immutable(path, raw):
             handle.write(raw)
 
 
-def validate_rehearsal(report, alpha):
+def validate_rehearsal(report, alpha, *, reuse_selection=False):
     if any(report.get(k) != v for k, v in {
         "schema_version": 1, "status": "complete", "protocol_amendment": "budget120-v1.4",
-        "scope": "rehearsal", "confirmatory": False, "split": "dev_anal", "n": 50,
+        "scope": "development_pipeline_check" if reuse_selection else "rehearsal",
+        "confirmatory": False, "split": "dev_select" if reuse_selection else "dev_anal",
+        "n": 200 if reuse_selection else 50,
         "common_alpha": alpha, "practical_delta": .02, "analysis_unavailable_reason": None}.items()):
         raise ValueError("Development rehearsal has not passed the registered analysis")
+    if reuse_selection and (report.get("selection_data_reused") is not True
+                            or report.get("independent_evaluation") is not False
+                            or report["PR6"]["outcome"] is not None):
+        raise ValueError("Reused selection data must not be reported as independent evaluation")
     expected = {"D-C": [10, 1], "D-E": [10, 2], "E-C": None}
     bootstrap = report["bootstrap"]
     if (bootstrap["keys"] != expected or bootstrap["attempts_per_registered_key"] != 10000
@@ -140,8 +146,22 @@ def preflight(root):
         raise ValueError("Snapshot analysis registry differs from the registered design")
     verify_data_source(base, root)  # Byte/blob checks only, including the sealed source.
     subprocess.run([sys.executable, "-m", "scripts.pilot_preflight", "--budget-v14"], cwd=root, check=True)
-    report = analyze_budget120(final_path.parent / "rehearsal_analysis_plan.json")
-    validate_rehearsal(report, final["common_alpha"])
+    development = final.get("development_check", {})
+    reuse_selection = development.get("mode") == "reuse_selected_development"
+    if reuse_selection:
+        policy = _read(root / "configs/development_check_policy.json")
+        if (policy["generate_dev_anal_responses"] is not False
+                or policy["pipeline_check_split"] != "dev_select"
+                or development["split"] != "dev_select"
+                or development["independent_evaluation"] is not False):
+            raise ValueError("Development pipeline-check amendment mismatch")
+        check_plan = _path(root, development["analysis_plan"])
+    else:
+        if (root / "configs/development_check_policy.json").is_file():
+            raise ValueError("Final plan does not honor the development-check amendment")
+        check_plan = final_path.parent / "rehearsal_analysis_plan.json"
+    report = analyze_budget120(check_plan)
+    validate_rehearsal(report, final["common_alpha"], reuse_selection=reuse_selection)
     evidence = dict(final["inputs_sha256"])
     evidence.update(final["files_sha256"])
     for name in (FINAL, BASE, base["stats"]["analysis_list"], "configs/budget120_protocol.json",
@@ -161,7 +181,8 @@ def preflight(root):
             raise ValueError("Original ID sequence preservation proof failed")
         evidence[current.relative_to(root).as_posix()] = sha256(current)
         evidence[original.relative_to(root).as_posix()] = sha256(original)
-    analysis_dir = root / "outputs/analysis/budget120/dev_anal"
+    analysis_dir = root / ("outputs/analysis/budget120/dev_select" if reuse_selection
+                           else "outputs/analysis/budget120/dev_anal")
     for path in analysis_dir.iterdir():
         if path.is_file():
             evidence[path.relative_to(root).as_posix()] = sha256(path)
@@ -185,8 +206,13 @@ def preflight(root):
             "reviewer_type": "AI", "human_signatures": "not_provided",
             "original_human_signoff_requirement_satisfied": False,
             "review_scope": "User-delegated AI execution and review; no claim of two-person human signoff",
+            "development_check": {"scope": report["scope"], "split": report["split"], "n": report["n"],
+                                  "independent_evaluation": not reuse_selection,
+                                  "separate_CDE_rehearsal_omitted": reuse_selection,
+                                  "dev_anal_greedy_and_gradients_previously_completed": True},
             "gates": {"G1": "computational_checks_1_and_16_rows", "G2": "required_CDE_checks_passed",
-                      "G3": "rehearsal_analysis_reproduced", "G4": "mechanical_LOCK_pending; human_signatures_not_provided"}}
+                      "G3": "selected_development_pipeline_reproduced" if reuse_selection else "rehearsal_analysis_reproduced",
+                      "G4": "mechanical_LOCK_pending; human_signatures_not_provided"}}
 
 
 def verify_lock(root):
@@ -227,6 +253,8 @@ def main():
                 "automatic_time_limit_stop: false", "",
                 "V1.4 overrides dormant original boost/budget/32-row fields. Only greedy/C/D/E test runs below are authorized.",
                 "D-C is confirmatory; D-E descriptive; E-C point only. No re-selection after rehearsal.",
+                "Development check: " + json.dumps(result["development_check"], sort_keys=True),
+                "When selection data are reused, their performance is selection-biased and is not independent validation.",
                 "Original two-person human extraction/LOCK signatures were not provided; AI review is not human signoff.",
                 "", "```json", json.dumps(result["required_test_runs"], indent=2), "```", ""])
             _immutable(ROOT / "LOCK.md", content.encode("utf-8"))

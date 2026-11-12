@@ -13,6 +13,9 @@ from scripts.run_experiment import ROOT, sha256
 
 def run_rehearsal(root, final_plan):
     root = Path(root).resolve()
+    policy = root / "configs/development_check_policy.json"
+    if policy.is_file() and json.loads(policy.read_text(encoding="utf-8")).get("generate_dev_anal_responses") is False:
+        raise ValueError("Separate GPU rehearsal is disabled by the development-check amendment")
     path = (root / final_plan).resolve()
     if not path.is_relative_to(root / "configs/generated/budget120/final"):
         raise ValueError("Rehearsal requires the dedicated final plan")

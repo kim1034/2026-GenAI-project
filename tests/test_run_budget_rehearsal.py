@@ -44,6 +44,14 @@ def test_only_frozen_development_runs_then_analysis(prepared):
     assert all("test" not in " ".join(call) for call in calls[2:])
 
 
+def test_user_amendment_disables_legacy_gpu_rehearsal(prepared):
+    root, path, calls, _ = prepared
+    (root / "configs/development_check_policy.json").write_text(json.dumps({"generate_dev_anal_responses": False}))
+    with pytest.raises(ValueError, match="disabled"):
+        rehearsal.run_rehearsal(root, path)
+    assert calls == []
+
+
 @pytest.mark.parametrize("change", ["hash", "test_command", "alpha"])
 def test_changed_evidence_or_test_command_cannot_launch(prepared, change):
     root, path, calls, plan = prepared

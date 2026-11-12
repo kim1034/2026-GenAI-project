@@ -29,6 +29,15 @@ def test_valid_rehearsal_is_calculation_only(report):
     lock.validate_rehearsal(report, .1)
 
 
+def test_selection_reuse_requires_explicit_nonindependent_scope(report):
+    report.update(scope="development_pipeline_check", split="dev_select", n=200,
+                  selection_data_reused=True, independent_evaluation=False, PR6={"outcome": None})
+    lock.validate_rehearsal(report, .1, reuse_selection=True)
+    report["independent_evaluation"] = True
+    with pytest.raises(ValueError, match="independent"):
+        lock.validate_rehearsal(report, .1, reuse_selection=True)
+
+
 @pytest.mark.parametrize("mutation", ["confirmatory", "missing_labels", "wrong_key", "ec_inference", "k8", "attempts"])
 def test_scientific_gate_rejects_invalid_rehearsal(report, mutation):
     if mutation == "confirmatory":

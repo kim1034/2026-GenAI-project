@@ -1,0 +1,6 @@
+{
+  "name": "budget120_pipeline_check",
+  "after_stage": "budget120_selection_followthrough",
+  "wait_timeout_seconds": 604800,
+  "commands": [["-m", "scripts.run_budget_pipeline_check"]]
+}
