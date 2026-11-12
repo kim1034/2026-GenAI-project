@@ -1,0 +1,12 @@
+{
+  "name": "budget120_rehearsal_followthrough",
+  "after_stage": "budget120_selection_followthrough",
+  "wait_timeout_seconds": 604800,
+  "require_initial_probe": true,
+  "commands": [
+    [
+      "-m", "scripts.run_budget_rehearsal",
+      "--final-plan", "configs/generated/budget120/final/final_plan.json"
+    ]
+  ]
+}
