@@ -1,0 +1,10 @@
+{
+  "hourly_rate_krw": 1261,
+  "rate_source": "user_confirmed",
+  "user_direction": "Maintain the existing experiment plan, proceed with experiments and revise the budget as measured usage accumulates.",
+  "previous_planning_hours": 120,
+  "expanded_fixed_cap_hours": null,
+  "additional_conditions_authorized": false,
+  "separate_followup_design_limit": 1,
+  "accounting": "Keep actual allocated-machine time, completed inference time, remaining forecasts and idle time distinct. Report required, conditional boost, optional P2 and reserve separately."
+}
