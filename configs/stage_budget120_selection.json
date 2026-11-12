@@ -1,0 +1,24 @@
+{
+  "name": "budget120_selection_followthrough",
+  "after_stage": "budget120_pilot",
+  "wait_timeout_seconds": 604800,
+  "require_initial_probe": true,
+  "commands": [
+    [
+      "-m", "scripts.prepare_budget_selection",
+      "--grid-decision", "outputs/analysis/budget120_pilot_C_grid.json",
+      "--pilot-plan", "configs/generated/budget120/pilot/grid_plan.json",
+      "--destination", "configs/generated/budget120/selection"
+    ],
+    [
+      "-m", "scripts.finalize_budget_selection",
+      "--selection-plan", "configs/generated/budget120/selection/selection_plan.json",
+      "--run-initial", "--bank-workers", "8"
+    ],
+    [
+      "-m", "scripts.prepare_budget_final_runs",
+      "--selection", "outputs/analysis/budget120_selection.json",
+      "--destination", "configs/generated/budget120/final"
+    ]
+  ]
+}
