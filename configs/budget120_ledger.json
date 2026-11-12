@@ -1,0 +1,15 @@
+{
+  "scope": "experiment_operating_limit",
+  "user_confirmed_spent_krw": 13236,
+  "hourly_rate_krw": 1261,
+  "observed_at_utc": "2026-11-12T01:37:40+00:00",
+  "anchor_used_hours": 10.496431403647899,
+  "total_allocated_hours_limit": 120,
+  "experiment_stop_at_used_hours": 110,
+  "shutdown_verification_backup_reserve_hours": 10,
+  "accounting_assumption": "The user's reported cumulative charge is treated as current at the observation timestamp. Add wall time from this timestamp while the same machine remains rented; reconcile against future user billing observations.",
+  "resource_revision_count": 1,
+  "resource_revision_limit": 1,
+  "automatic_further_redesign": false,
+  "automatic_gpu_return": false
+}
