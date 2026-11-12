@@ -1,4 +1,4 @@
-import copy
+import os
 import json
 
 import pytest
@@ -134,3 +134,16 @@ def test_dirty_tree_does_not_open_development_or_test_inputs(tmp_path, monkeypat
     monkeypatch.setattr(lock, "prepare", lambda *args: pytest.fail("dirty preflight reached evidence preparation"))
     with pytest.raises(ValueError, match="Commit"):
         lock.preflight(tmp_path)
+
+
+def test_tracked_korean_and_whitespace_filenames_are_hashed_exactly(tmp_path, monkeypatch):
+    names = ["설계 문서.md", "another file.md"]
+    if os.name != "nt":
+        names += ["embedded\nnewline.txt", "trailing space "]
+    for name in names:
+        (tmp_path / name).write_bytes(name.encode("utf-8"))
+    def git(root, *args):
+        assert args == ("ls-files", "-z")
+        return "\0".join(names) + "\0"
+    monkeypatch.setattr(lock, "_git", git)
+    assert lock._tracked_evidence(tmp_path) == {name: sha256(tmp_path / name) for name in names}

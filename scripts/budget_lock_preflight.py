@@ -36,7 +36,13 @@ def _read(path):
 
 
 def _git(root, *args):
-    return subprocess.check_output(["git", *args], cwd=root, text=True).strip()
+    return subprocess.check_output(["git", *args], cwd=root, text=True, encoding="utf-8").strip()
+
+
+def _tracked_evidence(root):
+    # Git's line-oriented output quotes Korean filenames and escapes spaces/newlines.
+    # NUL-separated output preserves the actual filenames for byte hashing.
+    return {name: sha256(_path(root, name)) for name in _git(root, "ls-files", "-z").split("\0") if name}
 
 
 def _immutable(path, raw):
@@ -194,8 +200,7 @@ def preflight(root):
                 raise ValueError("GPU repeat raw evidence changed")
             evidence[name] = check["raw_file_sha256"]
     # Capture every tracked source/config/doc byte at the reviewed commit.
-    for name in _git(root, "ls-files").splitlines():
-        evidence[name] = sha256(_path(root, name))
+    evidence.update(_tracked_evidence(root))
     if _git(root, "status", "--porcelain"):
         raise ValueError("Preflight unexpectedly changed tracked files")
     return {"schema_version": 1, "status": "ready_for_lock", "protocol_amendment": "budget120-v1.4",
