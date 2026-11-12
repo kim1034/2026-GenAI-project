@@ -1,6 +1,8 @@
 """Generate a development-only progress table from verified complete runs."""
 
 import json
+import argparse
+from pathlib import Path
 
 from scripts.run_experiment import ROOT, json_write
 from src.config import load_config
@@ -10,8 +12,12 @@ from src.result_io import load_completed, summarize_run
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--snapshot-root", type=Path, default=ROOT)
+    args = parser.parse_args()
+    snapshot = args.snapshot_root.resolve()
     config = load_config(ROOT / "configs/base.yaml")
-    manifests = [json.loads(path.read_text(encoding="utf-8")) for path in (ROOT / "outputs/manifests").glob("dev_*.json")]
+    manifests = [json.loads(path.read_text(encoding="utf-8")) for path in (snapshot / "outputs/manifests").glob("dev_*.json")]
     results = []
     for split in ("dev_base", "dev_select", "dev_anal"):
         data = load_split(ROOT, split, config)
@@ -24,7 +30,10 @@ def main():
         if len(greedy_manifests) != 1:
             raise ValueError("Ambiguous greedy reference")
         gm = greedy_manifests[0]
-        greedy = load_completed(ROOT, gm, ids)
+        frozen_ids = snapshot / f"data/splits/{split}.ids"
+        if snapshot != ROOT and (not frozen_ids.is_file() or frozen_ids.read_bytes() != (ROOT / f"data/splits/{split}.ids").read_bytes()):
+            raise RuntimeError("Backup split IDs differ from the local frozen split")
+        greedy = load_completed(snapshot, gm, ids)
         greedy_summary = {"run_id": gm["run_id"], "split": split, "condition": "greedy", "problems": len(ids),
                           "accuracy": sum(is_correct(greedy[i][0]["answer"], gold[i]) for i in ids) / len(ids),
                           "invalid": sum(greedy[i][0]["answer"] == INVALID for i in ids) / len(ids),
@@ -33,7 +42,7 @@ def main():
         for manifest in completed:
             if manifest["condition"] == "greedy":
                 continue
-            grouped = load_completed(ROOT, manifest, ids)
+            grouped = load_completed(snapshot, manifest, ids)
             summary, _, _ = summarize_run(grouped, greedy, gold)
             results.append({"run_id": manifest["run_id"], "split": split,
                             "condition": manifest["condition"], **summary})

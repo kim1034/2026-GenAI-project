@@ -171,7 +171,7 @@ def main() -> None:
     for name, indices in groups.items():
         prefix, width = ("test", 4) if name == "test" else ("train", 5)
         text = "".join(f"{prefix}-{int(index):0{width}d}\n" for index in indices)
-        (SPLITS / f"{name}.ids").write_text(text, encoding="ascii")
+        (SPLITS / f"{name}.ids").write_bytes(text.encode("ascii"))
 
     chosen = {int(index) for indices in list(groups.values())[:3] for index in indices}
     assert len(chosen) == 300
@@ -203,7 +203,7 @@ def main() -> None:
     (REPORTS / "leakage.md").write_text("\n".join(leakage) + "\n", encoding="utf-8")
 
     split_hashes = [f"{sha256(SPLITS / f'{name}.ids')}  {name}.ids" for name in groups]
-    (SPLITS / "SHA256SUMS").write_text("\n".join(split_hashes) + "\n", encoding="ascii")
+    (SPLITS / "SHA256SUMS").write_bytes(("\n".join(split_hashes) + "\n").encode("ascii"))
     data_card = [
         "# GSM8K 데이터 카드",
         "",
