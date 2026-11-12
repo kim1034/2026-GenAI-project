@@ -1,0 +1,7 @@
+{
+  "name": "budget120_sealed_test_followthrough",
+  "after_stage": "budget120_pipeline_check",
+  "wait_timeout_seconds": 604800,
+  "require_initial_probe": true,
+  "commands": [["-m", "scripts.seal_and_run_budget_test"]]
+}

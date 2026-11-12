@@ -129,6 +129,16 @@ def validate_test_plan(root, final):
     return required
 
 
+def validate_pipeline_receipt(receipt, report, *, final_sha, plan_sha, artifact_sha):
+    expected = {"schema_version": 1, "status": "passed_development_pipeline_check",
+                "scope": "development_pipeline_check", "selection_data_reused": True,
+                "independent_evaluation": False, "separate_CDE_rehearsal_omitted": True,
+                "final_plan_sha256": final_sha, "analysis_plan_sha256": plan_sha,
+                "analysis_input_sha256": report["input_sha256"], "artifacts_sha256": artifact_sha}
+    if any(receipt.get(key) != value for key, value in expected.items()):
+        raise ValueError("CPU pipeline-check receipt differs from verified analysis evidence")
+
+
 def preflight(root):
     root = Path(root).resolve()
     if (root / "LOCK.md").exists():
@@ -192,6 +202,13 @@ def preflight(root):
     for path in analysis_dir.iterdir():
         if path.is_file():
             evidence[path.relative_to(root).as_posix()] = sha256(path)
+    if reuse_selection:
+        cpu_receipt = root / "outputs/reproducibility/development_pipeline_check.json"
+        validate_pipeline_receipt(_read(cpu_receipt), report, final_sha=sha256(final_path),
+                                  plan_sha=sha256(check_plan), artifact_sha={
+                                      p.relative_to(root).as_posix(): sha256(p)
+                                      for p in analysis_dir.iterdir() if p.is_file()})
+        evidence[cpu_receipt.relative_to(root).as_posix()] = sha256(cpu_receipt)
     validation = _read(root / "outputs/diagnostics/gpu_validation_v14.json")
     for check in validation["checks"]:
         if check.get("raw_file"):

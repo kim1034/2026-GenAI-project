@@ -147,3 +147,16 @@ def test_tracked_korean_and_whitespace_filenames_are_hashed_exactly(tmp_path, mo
         return "\0".join(names) + "\0"
     monkeypatch.setattr(lock, "_git", git)
     assert lock._tracked_evidence(tmp_path) == {name: sha256(tmp_path / name) for name in names}
+
+
+def test_cpu_receipt_must_pin_the_reproduced_analysis_and_all_artifacts():
+    receipt = {"schema_version": 1, "status": "passed_development_pipeline_check",
+        "scope": "development_pipeline_check", "selection_data_reused": True,
+        "independent_evaluation": False, "separate_CDE_rehearsal_omitted": True,
+        "final_plan_sha256": "final", "analysis_plan_sha256": "plan", "analysis_input_sha256": "input",
+        "artifacts_sha256": {"analysis.json": "sha"}}
+    kwargs = {"final_sha": "final", "plan_sha": "plan", "artifact_sha": {"analysis.json": "sha"}}
+    lock.validate_pipeline_receipt(receipt, {"input_sha256": "input"}, **kwargs)
+    receipt["artifacts_sha256"] = {"analysis.json": "tampered"}
+    with pytest.raises(ValueError, match="receipt differs"):
+        lock.validate_pipeline_receipt(receipt, {"input_sha256": "input"}, **kwargs)
