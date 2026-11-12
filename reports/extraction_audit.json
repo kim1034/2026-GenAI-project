@@ -1,0 +1,10 @@
+{
+  "reviewer": "Astra (AI)",
+  "scope": "development_greedy_final_answer_extraction",
+  "reviewed": 50,
+  "mismatches": 0,
+  "ambiguous": 0,
+  "source_output_sha256": "ec07288ab1815b9fdd2f0df6d09feb9208ca242d0e47279a30d105c52432b701",
+  "review_export_sha256": "01ee1fe57e58d6516582d56d7c9e3da667e85b0ec1771807e21589b513fbd030",
+  "human_two_person_signoff": false
+}
