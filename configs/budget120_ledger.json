@@ -1,5 +1,7 @@
 {
   "scope": "experiment_operating_limit",
+  "automatic_time_limit_stop": false,
+  "latest_user_instruction": "Do not install or use an automatic stop based on usage-time limits. Continue the revised experiment plan.",
   "user_confirmed_spent_krw": 13236,
   "hourly_rate_krw": 1261,
   "observed_at_utc": "2026-11-12T01:37:40+00:00",
