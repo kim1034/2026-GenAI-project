@@ -1,0 +1,10 @@
+{
+  "name": "pilot_prepare_20261112",
+  "after_stage": "diagnostics_recovery_20261112",
+  "wait_timeout_seconds": 14400,
+  "require_initial_probe": true,
+  "commands": [
+    ["-m", "scripts.decide_sparsity"],
+    ["-m", "scripts.prepare_pilot"]
+  ]
+}
