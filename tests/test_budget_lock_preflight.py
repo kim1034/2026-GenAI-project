@@ -98,6 +98,15 @@ def test_wrong_test_order_blocks_lock(final):
         lock.validate_test_plan(root, plan)
 
 
+def test_unregistered_test_output_also_blocks_lock(final):
+    root, plan = final
+    path = root / "outputs/samples/test_legacy_run.jsonl"
+    path.parent.mkdir(parents=True)
+    path.write_text("sealed content must not be parsed")
+    with pytest.raises(ValueError, match="already exists"):
+        lock.validate_test_plan(root, plan)
+
+
 def test_locked_evidence_mutation_rejected_before_seal_call(tmp_path, monkeypatch):
     item = tmp_path / "evidence.json"
     item.write_text("original")

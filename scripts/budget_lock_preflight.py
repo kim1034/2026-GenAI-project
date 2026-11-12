@@ -83,6 +83,9 @@ def validate_rehearsal(report, alpha):
 
 
 def validate_test_plan(root, final):
+    for folder in ("outputs/manifests", "outputs/samples"):
+        if any((root / folder).glob("test_*")):
+            raise ValueError("Test output already exists before LOCK")
     configs = final["run_configs"]["test"]
     if set(configs) != {"greedy", "C", "D", "E"}:
         raise ValueError("Test requires exactly greedy/C/D/E")
