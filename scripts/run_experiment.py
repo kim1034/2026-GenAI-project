@@ -45,6 +45,18 @@ def git_head() -> str | None:
     return result.stdout.strip() if result.returncode == 0 else None
 
 
+def tokenizer_execution_metadata(tokenizer) -> dict:
+    from src.model import TOKENIZER_PROVENANCE_ATTRIBUTE
+    provenance = getattr(tokenizer, TOKENIZER_PROVENANCE_ATTRIBUTE, None)
+    verified = isinstance(provenance, dict) and provenance.get("verified") is True
+    return {
+        "tokenizer_hf_commit_hash": tokenizer.init_kwargs.get("_commit_hash"),
+        "tokenizer_revision_loaded": provenance["revision"] if verified else None,
+        "tokenizer_snapshot_files_sha256": dict(provenance["files_sha256"]) if verified else None,
+        "tokenizer_vocab_sha256": provenance["vocab_sha256"] if verified else None,
+    }
+
+
 def execution_environment(model, tokenizer) -> dict:
     import torch
     import transformers
@@ -61,7 +73,7 @@ def execution_environment(model, tokenizer) -> dict:
         "cublas_workspace_config": os.environ.get("CUBLAS_WORKSPACE_CONFIG"),
         "model_dtype": str(next(model.parameters()).dtype),
         "model_revision_loaded": getattr(model.config, "_commit_hash", None),
-        "tokenizer_revision_loaded": tokenizer.init_kwargs.get("_commit_hash"),
+        **tokenizer_execution_metadata(tokenizer),
         "sampling": "cpu_float64_inverse_cdf", "prefill_optimization_O1": False,
         "source_sha256": {str(path.relative_to(ROOT)).replace("\\", "/"): sha256(path) for path in sorted(sources)},
     }
