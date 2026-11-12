@@ -7,8 +7,8 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-FOLDERS = ["outputs/samples", "outputs/manifests", "outputs/diag", "outputs/diagnostics", "outputs/calib", "outputs/reproducibility",
-           "outputs/logs", "calib", "bank", "reports", "configs", "src", "scripts", "tests", "prompts", "data/splits", "models"]
+FOLDERS = ["outputs/samples", "outputs/manifests", "outputs/diag", "outputs/diagnostics", "outputs/calib", "outputs/reproducibility", "outputs/analysis",
+           "outputs/logs", "calib", "bank", "reports", "configs", "src", "scripts", "tests", "prompts", "data/splits", "data/raw", "data/processed", "models"]
 
 
 def main():
@@ -45,6 +45,14 @@ def main():
                 digest = hasher.hexdigest()
             updated[relative] = {"signature": signature, "sha256": digest}
             inventory.append({"path": relative, "size": before.st_size, "sha256": digest})
+    # Root protocol documents and LOCK are reproducibility evidence too.
+    roots = set(ROOT.glob("*.md")) | set(ROOT.glob("requirements*.txt"))
+    roots.update(ROOT / name for name in ("outputs/lock_preflight.json", "outputs/lock_verified.json"))
+    for path in sorted(roots):
+        if path.is_file() and not path.is_symlink():
+            inventory.append({"path": path.relative_to(ROOT).as_posix(),
+                              "size": path.stat().st_size,
+                              "sha256": hashlib.sha256(path.read_bytes()).hexdigest()})
     temporary = cache_path.with_suffix(".tmp")
     temporary.write_text(json.dumps(updated), encoding="utf-8")
     temporary.replace(cache_path)
