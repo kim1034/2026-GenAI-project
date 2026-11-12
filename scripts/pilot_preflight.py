@@ -14,6 +14,8 @@ def main():
     def read(name):
         return json.loads((ROOT / name).read_text(encoding="utf-8"))
     validation = read("outputs/diagnostics/gpu_validation_v14.json" if args.budget_v14 else "outputs/diagnostics/gpu_validation.json")
+    if args.budget_v14 and (validation.get("protocol_amendment") != "budget120-v1.4" or validation.get("scope_rows") != [1, 16]):
+        raise RuntimeError("GPU validation scope differs from the amended protocol")
     if validation["status"] != "passed_computational_checks" or not all(validation["hooks"].values()):
         raise RuntimeError("GPU computational validation is incomplete")
     if not read("outputs/diagnostics/dense_gue_n100.json")["passed"]:
