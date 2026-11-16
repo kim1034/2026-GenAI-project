@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "protocol_amendment": "budget120-v1.4",
+  "preparation_only": true,
+  "selection": "outputs/analysis/budget120_selection.json",
+  "selection_sha256": "4c08fb07bcb6740677a887b297148ecc3f292a4ae8f1ccaa8dc31a79a2fd0218",
+  "base_config": "configs/generated/budget120/pilot/base.yaml",
+  "base_config_sha256": "5b3e3e174dd3b9f235962a6c84228ee7116fdc2c5278ee59ac0f13e27226f30b",
+  "common_alpha": 0.174,
+  "protocol": "configs/generated/budget120/pilot/protocol.json",
+  "protocol_sha256": "dc26f4f30e0cf3417970dfb54da3bfc06b1567a445fb4d3097a0d5cd2a49b977",
+  "source_runs": {
+    "C": {
+      "run_config": "configs/generated/budget120/selection/dev_select_C_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.yaml",
+      "run_config_sha256": "5cddea5cf65734d2b861bdb16ad9e1b5df8d6027f89e8ce2f7116fe24434dbed",
+      "manifest": "outputs/manifests/dev_select_C_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.json",
+      "manifest_sha256": "bced1de8b058b3599b31c427a8cf00fef078fa86bf5a555d2d05434e14bacfee",
+      "output_sha256": "ea3ecee0855795e2ff2fd5a53c7e70f0268e251bf1cb25f601c3535e9f3c9f95"
+    },
+    "D": {
+      "run_config": "configs/generated/budget120/selection/adaptive/dev_select_D_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.yaml",
+      "run_config_sha256": "cb0ed13edc71a86d2baf2e201bd30436f6738e98318127d48ca416337080ff52",
+      "manifest": "outputs/manifests/dev_select_D_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.json",
+      "manifest_sha256": "63b8ebfec2c38442611cc2c7adc7002ff2470802bcf18278b77fcf7636dc4a83",
+      "output_sha256": "7bd4880c494afa515d7f2b0e38db7c17e1c07c5b4af467b61feb481a2126141e"
+    },
+    "E": {
+      "run_config": "configs/generated/budget120/selection/adaptive/dev_select_E_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.yaml",
+      "run_config_sha256": "b1ce0e44e40597dfe4d4641397c986845fac3aa83929f98cb1219955450528fd",
+      "manifest": "outputs/manifests/dev_select_E_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.json",
+      "manifest_sha256": "8e80ce2e298626b21a6352bc42d3cda7b057d66164797642700aed731a565582",
+      "output_sha256": "b357b90d6d027fef5cb0cd56d373ec610d95f02979266c22f79a373150ce60fc"
+    }
+  },
+  "run_configs": {
+    "test": {
+      "greedy": "configs/generated/budget120/final/test_greedy_aNA_T0.00_NA_s0_k1_v2_35a0b069422900bb.yaml",
+      "C": "configs/generated/budget120/final/test_C_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.yaml",
+      "D": "configs/generated/budget120/final/test_D_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.yaml",
+      "E": "configs/generated/budget120/final/test_E_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.yaml"
+    }
+  },
+  "inputs_sha256": {
+    "outputs/analysis/budget120_pilot_C_grid.json": "d8bea1365326efe145036897d29bb37471abc1cba9660721c3b8b5923405c5a9",
+    "configs/generated/budget120/pilot/grid_plan.json": "672ae846a7f5720b7f24d35998ecf457e63bf8fbbd2815060bc1080661ea1bda",
+    "configs/generated/budget120/pilot/base.yaml": "5b3e3e174dd3b9f235962a6c84228ee7116fdc2c5278ee59ac0f13e27226f30b",
+    "configs/generated/budget120/pilot/analysis.yaml": "813371429ac0abd8d23deef8d735aca61911dd4e22970305f8dc2ea8f4e022d8",
+    "configs/generated/budget120/pilot/rho.json": "e09f9da5b7049e33f8f5c90b8342b9d6fb2d52fdb9a08dab52ccbd9167ece09b",
+    "prompts/system.txt": "64293c70cb638482b2fc7ee5676c23840728294bda0a58ed719d378e61c456b3",
+    "prompts/gsm8k_8shot.json": "4d64483f2d85282fe8893ef53776986c348b2f0bb60b46b5ed62065a10590b11",
+    "data/splits/dev_select.ids": "56bcab19fbe4db5ea351e2adb7f2de5137246ff34099e002abdfd11df72a3918",
+    "configs/generated/budget120/selection/selection_plan.json": "87f1aea4b60e2c36a8002a8b3d44aa2ce21a98cf0909f64cb22e29e748a1b6a5",
+    "configs/runs/dev_select_greedy.yaml": "4fbf21e9c038f61300081197dc97a623fd0e0fd556722b2cc51ed6850e722896",
+    "outputs/manifests/dev_select_greedy_aNA_T0.00_NA_s0_k1.json": "40d3eddbdd99f71d56975a2e38df212b8aee186f1c76f7a8d83e98094ea87510",
+    "outputs/samples/dev_select_greedy_aNA_T0.00_NA_s0_k1.jsonl": "f3ae572e6ac81c06e0a1c7967b30e93a8b23f48d8a18dd0b4dfdf4f33208ca77",
+    "configs/base.yaml": "b2d6e46b2dbb14a97d4f97877ffe9ed2fa8094b1038f4737980dd8fed1024520",
+    "configs/analysis.yaml": "0ed5c97b18f27d19c7320197353c088eebed2b5ffba6179c95cecd7b2c971509",
+    "calib/rho.json": "e09f9da5b7049e33f8f5c90b8342b9d6fb2d52fdb9a08dab52ccbd9167ece09b",
+    "data/processed/train.jsonl": "97094d6c1b75f8875bfa0495b5a5afa44da7ae8f7c20758727171dba688603b2",
+    "configs/generated/budget120/selection/dev_select_A_aNA_T0.50_NA_s0_k16_v2_56c9bec96a68583d.yaml": "2a9e44f420c983953f175d5615b54fc3ffb520d21fb7c0c699bc9cec02d8d9a1",
+    "outputs/manifests/dev_select_A_aNA_T0.50_NA_s0_k16_v2_56c9bec96a68583d.json": "e2ef531604e5763ac4ea7cc18c37e9f84801278d1f26fc637619c2e0e700d786",
+    "outputs/samples/dev_select_A_aNA_T0.50_NA_s0_k16_v2_56c9bec96a68583d.jsonl": "aebe4864a50283add7a5798e26003f88919b4478adc3ca76d7dc8ac77324b0b6",
+    "configs/generated/budget120/selection/dev_select_C_a0.1000_T0.50_B0_s0_k16_v2_f80c366dcac6b8e1.yaml": "f9fe44f1b89f854d1bd90f8eb101ffbb2904d965c50b23b80aa5a619d7d24a98",
+    "outputs/manifests/dev_select_C_a0.1000_T0.50_B0_s0_k16_v2_f80c366dcac6b8e1.json": "0cdd21eb1e2758ebdc999465631a5b13ae33d94cef95539caf839bd5646e4ab8",
+    "outputs/samples/dev_select_C_a0.1000_T0.50_B0_s0_k16_v2_f80c366dcac6b8e1.jsonl": "3df559104134f574bcc48a79c277eb64d6b5f3bdcc82570741e5fdd6b6774b0d",
+    "configs/generated/budget120/selection/dev_select_C_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.yaml": "5cddea5cf65734d2b861bdb16ad9e1b5df8d6027f89e8ce2f7116fe24434dbed",
+    "outputs/manifests/dev_select_C_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.json": "bced1de8b058b3599b31c427a8cf00fef078fa86bf5a555d2d05434e14bacfee",
+    "outputs/samples/dev_select_C_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.jsonl": "ea3ecee0855795e2ff2fd5a53c7e70f0268e251bf1cb25f601c3535e9f3c9f95",
+    "configs/generated/budget120/selection/dev_select_C_a0.4000_T0.50_B0_s0_k16_v2_89057cfe5840a926.yaml": "99caad124955aadb1f75e00e790338ad6a18a64ac6c0b5052d2cbfca40c09c90",
+    "outputs/manifests/dev_select_C_a0.4000_T0.50_B0_s0_k16_v2_89057cfe5840a926.json": "f8019eb8842df06f7b56bd2ce7d880dbfd0e54af46a04661707583253e7392d0",
+    "outputs/samples/dev_select_C_a0.4000_T0.50_B0_s0_k16_v2_89057cfe5840a926.jsonl": "8296a03caa24984b2f6ee905260a122b9057e5961b0fa315df906d91bf4bd947",
+    "outputs/analysis/budget120_selection_initial.json": "7a6016a772df84c7738d93c083181b6bd63f2841e7c96dcd8f489788c331cdb8",
+    "outputs/analysis/budget120_selection_edge.json": "6a2381c5ddd92c42cafabafb67d2ff2865a00bf16c8730c5db895e0382edcad2",
+    "configs/generated/budget120/selection/adaptive/dev_select_D_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.yaml": "cb0ed13edc71a86d2baf2e201bd30436f6738e98318127d48ca416337080ff52",
+    "outputs/manifests/dev_select_D_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.json": "63b8ebfec2c38442611cc2c7adc7002ff2470802bcf18278b77fcf7636dc4a83",
+    "outputs/samples/dev_select_D_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.jsonl": "7bd4880c494afa515d7f2b0e38db7c17e1c07c5b4af467b61feb481a2126141e",
+    "configs/generated/budget120/selection/adaptive/dev_select_E_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.yaml": "b1ce0e44e40597dfe4d4641397c986845fac3aa83929f98cb1219955450528fd",
+    "outputs/manifests/dev_select_E_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.json": "8e80ce2e298626b21a6352bc42d3cda7b057d66164797642700aed731a565582",
+    "outputs/samples/dev_select_E_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.jsonl": "b357b90d6d027fef5cb0cd56d373ec610d95f02979266c22f79a373150ce60fc",
+    "outputs/analysis/budget120_selection.json": "4c08fb07bcb6740677a887b297148ecc3f292a4ae8f1ccaa8dc31a79a2fd0218",
+    "configs/generated/budget120/pilot/protocol.json": "dc26f4f30e0cf3417970dfb54da3bfc06b1567a445fb4d3097a0d5cd2a49b977",
+    "configs/development_check_policy.json": "f745861712007d8929209ec22c9f0d667bd394a4b7259e49b651dcf801e16154",
+    "bank/C/B0/s0/dev_select_rows0-15.npy": "3b9e5149fe9aa2d5cd51641f2dc986f38f19d6caa94356525249e0d682c62de6",
+    "bank/C/B0/s0/dev_select_rows0-15.json": "0401e9301d5a9815d327124c81ea779e9d30d1654a2f1d892966209890fa3d74",
+    "bank/D/B0/s0/dev_select_rows0-15.npy": "7bb9dcd13c372ca4b79551d3704ee911c2c190b62c6d4a39766022f69419be9c",
+    "bank/D/B0/s0/dev_select_rows0-15.json": "4213e0dd00850b057ac75cbfc3342a8013d97b1eeffa4dad0d9497291c171b64",
+    "bank/E/B0/s0/dev_select_rows0-15.npy": "108656ade25ffc9067817e5dc0c2daf16406d3150d95be5c6ca4297900ea7e82",
+    "bank/E/B0/s0/dev_select_rows0-15.json": "a7a5c1cee01b2fd1ef8c306b0232e3366f88de7bf198c131cff2cde34d9ef5fb"
+  },
+  "files_sha256": {
+    "configs/generated/budget120/final/test_greedy_aNA_T0.00_NA_s0_k1_v2_35a0b069422900bb.yaml": "03d8ddf3ad8d8c43e1996fc754ef7f349047fa9247626cf32b74677c5013a106",
+    "configs/generated/budget120/final/test_C_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.yaml": "688a972b5cfe1c3b53713a3e89a5eb2723f7362da3b735ec27c44b8801e66fe6",
+    "configs/generated/budget120/final/test_D_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.yaml": "8849ce754ceaf9c2f298313eec374ce65be8dad5a7dbe43c11ab28dfdeb69a6a",
+    "configs/generated/budget120/final/test_E_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.yaml": "87e019319571b1f556112ed76cd854a36ffea09cd23d98b0bbe867893a8344a3",
+    "configs/generated/budget120/final/stage_test.json": "f22b78b76a0ae5762d90ff7813344d49c77f52cdbdb778f1373f6af13d289a9f",
+    "configs/generated/budget120/final/pipeline_check_analysis_plan.json": "699e9616f49d2bc536ff8dbebc7384e84fe6d4518942c7ee955a8487efb6c8c2",
+    "configs/generated/budget120/final/test_analysis_plan.json": "8129e2a3ae20f46c6add0cd07607f18d0414f3073ba9868a982aab68e5cad05c"
+  },
+  "test_analysis_requires_all": [
+    "C",
+    "D",
+    "E"
+  ],
+  "development_check_policy": "configs/development_check_policy.json",
+  "development_check_policy_sha256": "f745861712007d8929209ec22c9f0d667bd394a4b7259e49b651dcf801e16154",
+  "development_check": {
+    "mode": "reuse_selected_development",
+    "split": "dev_select",
+    "analysis_plan": "configs/generated/budget120/final/pipeline_check_analysis_plan.json",
+    "independent_evaluation": false,
+    "generate_dev_anal_responses": false
+  }
+}

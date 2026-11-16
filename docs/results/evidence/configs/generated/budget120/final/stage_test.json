@@ -1,0 +1,44 @@
+{
+  "name": "budget120_test",
+  "preparation_only": true,
+  "require_initial_probe": true,
+  "requires_test_lock": true,
+  "commands": [
+    [
+      "-m",
+      "scripts.run_experiment",
+      "configs/generated/budget120/final/test_greedy_aNA_T0.00_NA_s0_k1_v2_35a0b069422900bb.yaml"
+    ],
+    [
+      "-m",
+      "scripts.build_bank",
+      "configs/generated/budget120/final/test_C_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.yaml"
+    ],
+    [
+      "-m",
+      "scripts.run_experiment",
+      "configs/generated/budget120/final/test_C_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.yaml"
+    ],
+    [
+      "-m",
+      "scripts.build_bank",
+      "configs/generated/budget120/final/test_D_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.yaml"
+    ],
+    [
+      "-m",
+      "scripts.run_experiment",
+      "configs/generated/budget120/final/test_D_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.yaml"
+    ],
+    [
+      "-m",
+      "scripts.build_bank",
+      "configs/generated/budget120/final/test_E_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.yaml"
+    ],
+    [
+      "-m",
+      "scripts.run_experiment",
+      "configs/generated/budget120/final/test_E_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.yaml"
+    ]
+  ],
+  "test_access_guard": "scripts.run_experiment -> src.config.assert_test_locked before model load"
+}

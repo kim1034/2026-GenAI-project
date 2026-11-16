@@ -1,0 +1,248 @@
+{
+  "schema_version": 1,
+  "title": "GUE와 Gaussian 교란의 오류 탐지: V1.4 최종 결과",
+  "as_of": "2026-11-16",
+  "status": "completed_reduced_v1.4_scope",
+  "protocol": "budget120-v1.4",
+  "scope": {
+    "model": "Qwen/Qwen2.5-1.5B-Instruct",
+    "model_revision": "989aa7980e4cf806f80c7fef2b1adb7bc71aa306",
+    "dataset": "GSM8K official test",
+    "problems": 1319,
+    "greedy_responses": 1319,
+    "responses_per_C_D_E": 16,
+    "total_test_responses": 64631,
+    "common_alpha": 0.174,
+    "temperature": 0.5,
+    "max_new_tokens": 512,
+    "dtype": "float32",
+    "attention_backend": "eager",
+    "basis": "B0",
+    "seed_set": 0,
+    "global_seed": 2026,
+    "positive_greedy_error_labels": 450,
+    "primary_metric": "mean of two disjoint K=8 subset AUROCs"
+  },
+  "primary": {
+    "comparison": "D-C",
+    "delta": -0.0017350722414014585,
+    "ci95": [
+      -0.012642905035736108,
+      0.009018952485343623
+    ],
+    "equivalence_margin": 0.02,
+    "registered_verdict": 7,
+    "PR6": "confirmed_practical_equivalence_within_fixed_scope"
+  },
+  "metrics": [
+    {
+      "condition": "C",
+      "problems": 1319,
+      "responses": 21104,
+      "positive_labels": 450,
+      "auroc": 0.8650856667945276,
+      "auprc": 0.7116170851823036,
+      "maj_acc": 0.7611827141774071,
+      "invalid": 0.04927975739196361,
+      "truncated": 0.0027482941622441245
+    },
+    {
+      "condition": "D",
+      "problems": 1319,
+      "responses": 21104,
+      "positive_labels": 450,
+      "auroc": 0.8633505945531261,
+      "auprc": 0.7151671332280685,
+      "maj_acc": 0.7721758908263836,
+      "invalid": 0.047289613343442,
+      "truncated": 0.0021796815769522366
+    },
+    {
+      "condition": "E",
+      "problems": 1319,
+      "responses": 21104,
+      "positive_labels": 450,
+      "auroc": 0.8607761155862421,
+      "auprc": 0.7121647023554639,
+      "maj_acc": 0.766868840030326,
+      "invalid": 0.04591546626231994,
+      "truncated": 0.0021796815769522366
+    }
+  ],
+  "comparisons": [
+    {
+      "comparison": "D-C",
+      "delta": -0.0017350722414014585,
+      "ci95": [
+        -0.012642905035736108,
+        0.009018952485343623
+      ],
+      "se": 0.005539125908299978,
+      "confirmatory": true,
+      "bootstrap_attempted": 10000,
+      "bootstrap_valid": 10000,
+      "bootstrap_skipped": 0
+    },
+    {
+      "comparison": "D-E",
+      "delta": 0.0025744789668840085,
+      "ci95": [
+        -0.008784145750593924,
+        0.014211798702221898
+      ],
+      "se": 0.005830438046465304,
+      "confirmatory": false,
+      "bootstrap_attempted": 10000,
+      "bootstrap_valid": 10000,
+      "bootstrap_skipped": 0
+    },
+    {
+      "comparison": "E-C",
+      "delta": -0.004309551208285467,
+      "ci95": null,
+      "se": null,
+      "confirmatory": false,
+      "bootstrap_attempted": 0,
+      "bootstrap_valid": 0,
+      "bootstrap_skipped": 0
+    }
+  ],
+  "k_curve_descriptive": [
+    {
+      "condition": "C",
+      "K": 2,
+      "subsets": 8,
+      "auroc": 0.7404937028512978
+    },
+    {
+      "condition": "C",
+      "K": 4,
+      "subsets": 4,
+      "auroc": 0.8284695051783659
+    },
+    {
+      "condition": "C",
+      "K": 8,
+      "subsets": 2,
+      "auroc": 0.8650856667945276
+    },
+    {
+      "condition": "C",
+      "K": 16,
+      "subsets": 1,
+      "auroc": 0.8786063163278351
+    },
+    {
+      "condition": "D",
+      "K": 2,
+      "subsets": 8,
+      "auroc": 0.7383608234241146
+    },
+    {
+      "condition": "D",
+      "K": 4,
+      "subsets": 4,
+      "auroc": 0.8247196650044751
+    },
+    {
+      "condition": "D",
+      "K": 8,
+      "subsets": 2,
+      "auroc": 0.8633505945531261
+    },
+    {
+      "condition": "D",
+      "K": 16,
+      "subsets": 1,
+      "auroc": 0.8793223372970208
+    },
+    {
+      "condition": "E",
+      "K": 2,
+      "subsets": 8,
+      "auroc": 0.7338420598388953
+    },
+    {
+      "condition": "E",
+      "K": 4,
+      "subsets": 4,
+      "auroc": 0.8223983505945531
+    },
+    {
+      "condition": "E",
+      "K": 8,
+      "subsets": 2,
+      "auroc": 0.8607761155862421
+    },
+    {
+      "condition": "E",
+      "K": 16,
+      "subsets": 1,
+      "auroc": 0.8773149213655543
+    }
+  ],
+  "condition_status": {
+    "greedy": "test_complete_error_label_reference_not_A",
+    "A": "development_only_test_not_run",
+    "A_prime": "test_not_run",
+    "B_uniform": "test_not_run",
+    "C": "test_complete",
+    "D": "test_complete",
+    "E": "test_complete_iid_GUE_marginal_not_Uniform_B"
+  },
+  "followup_draft": {
+    "status": "unregistered_unexecuted",
+    "separate_designs_used": 0,
+    "maximum_separate_designs": 1,
+    "new_test_responses_A": 10552,
+    "new_test_responses_B": 10552,
+    "B_development_responses": 2400,
+    "new_responses_total": 23504,
+    "K": 8,
+    "seed_set": 0,
+    "C_D_E_reuse": "fixed k=0..7 only, subject to compatibility verification",
+    "comparison": "D-B, post-hoc supplementary comparison",
+    "conditional_planning_hours": null,
+    "completion_time_guaranteed": false,
+    "automatic_time_cutoff": false,
+    "target_hours": 30,
+    "duration_status": "unknown_before_K8_and_B_timing_measurements"
+  },
+  "review": {
+    "design_and_interpretation": "Astra (AI)",
+    "implementation_execution_and_integrity_checks": "Sol",
+    "two_human_reviewers_signed": false
+  },
+  "backup": {
+    "verified_files": 8382,
+    "verified_bytes": 3370723176,
+    "missing_files": 0,
+    "hash_mismatches": 0,
+    "external_model_weight_cache_included": false
+  },
+  "provenance": {
+    "locked_commit": "1d66a23e344f273eeb8a5f5cd0d7a18b9135d14e",
+    "locked_tag": "lock-v1",
+    "LOCK_sha256": "ae339bd100331803a5edb9efe7fb40100b590913188279f571b011bd174f66e8",
+    "source_artifact_sha256": {
+      "analysis.json": "59a4b4908f810fb1fb530e967a67d7b4d66c4d31f2561a53f6cdbef40b481f45",
+      "figure2.png": "a7ae0cd110bdec422cc8089593ae68e069e1ae7edeb449d69c8cbc0b924abf70",
+      "metrics.csv": "c19847ee7e8640fc394cd0b1a3b7f8ef3756c72b049367ec7126d3e1f3e5c87c",
+      "comparisons.csv": "c8aaa3911383c77a90783806fe4f6204c1de32f7a1f95c9848b7e744952c935d",
+      "k_curve.csv": "6f34d78e2c2321f9334f27fde6c95e4a8e6556a8a9e4ff036806ca72f2bb800c"
+    },
+    "interpretation_sha256": "0e36da05933ee88ffd6bfb11be3e4bd20bc2c49b00502c81d574b16f85e60f5b",
+    "bundle_sha256": "6b9622b9d9fdc65686d71cbd7d6b02901de983e70b761964550da4251be0e63a",
+    "final_test_receipt_sha256": "2b422fa40978d4a547340e990278d4e7b7054de7ef79420bf1b9d19914ca8623",
+    "sealed_code_distribution": "Local verified full-history Git bundle; public repository main is not the sealed execution commit."
+  },
+  "limitations": [
+    "One model, one task, one generation seed, fixed common alpha; no broad generalization.",
+    "Bootstrap conditions on generated responses; no independent generation-seed uncertainty.",
+    "A and original Uniform B missing on test; no claim of improvement over those baselines.",
+    "Main metric is average of two K8 AUROCs, not pooled K16 entropy AUROC.",
+    "Independent CDE dev_anal generation rehearsal omitted; CPU pipeline check reused selected development inputs.",
+    "AI review only; two-human review/signature requirement not fulfilled.",
+    "External GPU workloads observed; owner, installation time, causal effects on interruption or results unconfirmed. Hash checks establish preservation, not an uncontended execution environment."
+  ]
+}
