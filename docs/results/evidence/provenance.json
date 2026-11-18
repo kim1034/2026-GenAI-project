@@ -1,0 +1,66 @@
+{
+  "as_of": "2026-11-16",
+  "kind": "public_derivative_index_not_full_archive",
+  "locked_commit": "1d66a23e344f273eeb8a5f5cd0d7a18b9135d14e",
+  "main_code_identical_to_execution_code": false,
+  "original_analysis_sha256": "59a4b4908f810fb1fb530e967a67d7b4d66c4d31f2561a53f6cdbef40b481f45",
+  "local_archive_verified": {
+    "files": 8382,
+    "bytes": 3370723176,
+    "missing": 0,
+    "hash_mismatches": 0,
+    "model_weight_cache_included": false
+  },
+  "published_exact_copies": [
+    {
+      "public_path": "evidence/LOCK.md",
+      "sha256": "ae339bd100331803a5edb9efe7fb40100b590913188279f571b011bd174f66e8",
+      "bytes": 2408
+    },
+    {
+      "public_path": "evidence/configs/generated/budget120/final/final_plan.json",
+      "sha256": "94c19535a4d4e333cfa022e9f4b110e02adf373e06a8f592f0f019c6500a85f6",
+      "bytes": 10246
+    },
+    {
+      "public_path": "evidence/configs/generated/budget120/final/pipeline_check_analysis_plan.json",
+      "sha256": "699e9616f49d2bc536ff8dbebc7384e84fe6d4518942c7ee955a8487efb6c8c2",
+      "bytes": 669
+    },
+    {
+      "public_path": "evidence/configs/generated/budget120/final/stage_test.json",
+      "sha256": "f22b78b76a0ae5762d90ff7813344d49c77f52cdbdb778f1373f6af13d289a9f",
+      "bytes": 1315
+    },
+    {
+      "public_path": "evidence/configs/generated/budget120/final/test_analysis_plan.json",
+      "sha256": "8129e2a3ae20f46c6add0cd07607f18d0414f3073ba9868a982aab68e5cad05c",
+      "bytes": 663
+    },
+    {
+      "public_path": "evidence/configs/generated/budget120/final/test_C_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.yaml",
+      "sha256": "688a972b5cfe1c3b53713a3e89a5eb2723f7362da3b735ec27c44b8801e66fe6",
+      "bytes": 172
+    },
+    {
+      "public_path": "evidence/configs/generated/budget120/final/test_D_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.yaml",
+      "sha256": "8849ce754ceaf9c2f298313eec374ce65be8dad5a7dbe43c11ab28dfdeb69a6a",
+      "bytes": 172
+    },
+    {
+      "public_path": "evidence/configs/generated/budget120/final/test_E_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.yaml",
+      "sha256": "87e019319571b1f556112ed76cd854a36ffea09cd23d98b0bbe867893a8344a3",
+      "bytes": 172
+    },
+    {
+      "public_path": "evidence/configs/generated/budget120/final/test_greedy_aNA_T0.00_NA_s0_k1_v2_35a0b069422900bb.yaml",
+      "sha256": "03d8ddf3ad8d8c43e1996fc754ef7f349047fa9247626cf32b74677c5013a106",
+      "bytes": 177
+    },
+    {
+      "public_path": "evidence/configs/generated/budget120/pilot/base.yaml",
+      "sha256": "5b3e3e174dd3b9f235962a6c84228ee7116fdc2c5278ee59ac0f13e27226f30b",
+      "bytes": 6357
+    }
+  ]
+}

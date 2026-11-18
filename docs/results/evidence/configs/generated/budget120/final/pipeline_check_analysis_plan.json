@@ -1,0 +1,13 @@
+{
+  "root": "../../../..",
+  "split": "dev_select",
+  "selection_file": "outputs/analysis/budget120_selection.json",
+  "base_config": "configs/generated/budget120/pilot/base.yaml",
+  "run_configs": {
+    "greedy": "configs/runs/dev_select_greedy.yaml",
+    "C": "configs/generated/budget120/selection/dev_select_C_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.yaml",
+    "D": "configs/generated/budget120/selection/adaptive/dev_select_D_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.yaml",
+    "E": "configs/generated/budget120/selection/adaptive/dev_select_E_a0.1740_T0.50_B0_s0_k16_v2_bbae766c5128f03e.yaml"
+  },
+  "output_dir": "outputs/analysis/budget120/dev_select"
+}

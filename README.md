@@ -9,13 +9,18 @@ GSM8K 문제에서 고정된 `Qwen/Qwen2.5-1.5B-Instruct`의 추론 중 MLP 활�
 3. [실행 계획](docs/실행계획.md): 단계별 게이트와 LOCK 이후 시험 절차.
 4. [인계 문서 v1.3](GUE_Gaussian_환각탐지_인계문서_ClaudeCode용_v1.3.md): 실험의 상세 사양. 충돌할 때 이 문서의 v1.3 데이터 출처와 Part 2를 우선한다.
 
-## 현재 상태
+## 현재 상태 — 2026-11-16
 
-- 원본 GSM8K train 7,473행과 test 1,319행의 출처·SHA-256·정답 파싱을 검증했다.
-- 개발 300문제를 `dev_base` 50, `dev_select` 200, `dev_anal` 50으로 고정했다.
-- CPU 검산 29개가 통과했다. Qwen/CUDA의 실제 forward, GPU 메모리, 실행 시간은 검증 전이다.
-- 목표 GPU는 RunYourAI의 NVIDIA RTX A5000 24 GB 한 장이다. 장비 대기 중이다.
-- `LOCK.md`는 아직 없다. test 모델 실행은 금지되며 코드도 이를 검사한다.
+**승인된 V1.4 축소 실험 완료. A·B 본시험과 원논문 기준선 재현은 미완료.**
+
+- [팀 공유용 웹 보고서](https://kim1034.github.io/2026-GenAI-project/results/) · [결과 Markdown](docs/results/report.md) · [공유 자료 목록](docs/results/README.md)
+- Qwen2.5-1.5B-Instruct / GSM8K test 1,319문항에서 Greedy·C(Gaussian)·D(GUE)·E(주변분포 독립 대조군) 총 64,631응답을 완료했다.
+- 주 비교 D−C AUROC 차이 −0.001735, 95% CI [−0.012643, 0.009019]. 사전 ±0.02 기준 내 실용적 동등성 확인이며 이 모델·데이터·설정에 한정된다.
+- A(T=0.5)는 개발 실행만 완료했고 B(Uniform)는 본시험을 하지 않았다. Greedy는 A가 아니며 E는 Uniform이 아니다.
+- [A·B 보완 계획](docs/results/plan.md)은 30시간 목표 초안으로 미등록·미실행이다. [수행 과정](docs/results/process.md)과 [확정 LOCK 사본](docs/results/evidence/LOCK.md)을 공개한다.
+- 실행 코드와 전체 원시 자료는 로컬 검증 백업에 보존한다. 공개 main 코드가 실제 LOCK 코드와 같다고 주장하지 않는다. [보존 범위·한계](docs/results/README.md)를 확인한다.
+
+초기 인계 가이드와 아래 사전 점검은 준비 단계 문서다. 최신 상태와 해석은 위 보고서를 기준으로 읽는다.
 
 ## 로컬 사전 점검
 
